@@ -158,7 +158,7 @@ const bkMan = () => { const r = S.role; let list = BOOK.slice(); if (r === 'L2')
   const unpub = UNPUB().filter(u => r === 'L3' || u.cid === me()).map(u => `${ST(u.cid).name} ${u.day}`).join('、');
   return (unpub ? `<div class="head n" style="padding:10px 16px">${I('cal')}<div class="grow"><b style="font-size:13.5px">请提前 2 天提交排班：${unpub} 还没有开放任何时段</b></div><button class="btn sec xs" data-act="btab" data-arg="sched">去排班</button></div>` : '') +
     `<div class="card bkpin"><h3>${I('inbox')}待确认申请（${pend.length}）<span class="sp"></span><small>学生提交的是申请，老师确认后才算约好</small></h3>${pend.length ? bkBtnFix(bookTable(pend)) : `<div class="empty"><img src="${MASCOT}" alt="">没有等你确认的申请</div>`}
-      <p class="note">打开申请能看到这个学生的预咨询摘要、普测结果和档案，能看到哪些按你的账号权限；每次查看记入操作记录。<b>确认</b>后变成正式预约；<b>改时间</b>要学生再确认一次；<b>婉拒</b>写一句原因，学生回到选时间那一步。</p></div>
+      <p class="note">打开申请可查看你有权限访问的预咨询摘要、普测结果和档案，查看会记入操作记录。确认后预约生效；提出新时间后等学生接受；婉拒时请说明原因，学生可以重新选时间。</p></div>
     <div class="card"><div class="tabs">${subs.map(([k, n]) => `<button class="${sub === k ? 'on' : ''}" data-act="bsub" data-arg="${k}">${n}<i class="${k === 'pool' && list.filter(F[k]).length ? 'r' : ''}">${list.filter(F[k]).length}</i></button>`).join('')}</div>${bookTable(list.filter(F[sub]))}
     <p class="note" style="margin-top:10px">规则：所有预约都要老师确认，学生自己约普通号和主动邀约来的学生都一样。提前 24 小时预约；学生每 14 天可改期、取消各 1 次（老师改约不计）。确认时限：危机 ${RULES.lim.book5} 小时，其余 ${RULES.lim.book} 小时；超时自动进入待办池，由中心负责人指派。</p></div>`; };
 
@@ -209,7 +209,7 @@ const bkSched = () => { const ed = S.role === 'L3', period = S.tabs.workPeriod |
     <div class="card"><h3>工作量 · ${period === 'month' ? '本月' : '本周'}<span class="sp"></span><button class="btn ghost xs" data-act="workPeriod" data-arg="week">本周</button><button class="btn ghost xs" data-act="workPeriod" data-arg="month">本月</button></h3><table class="t"><tr><th>咨询师</th><th>排班总时段</th><th>已约 / 待确认</th><th>开放时段</th></tr>${wk.map(x => `<tr><td>${ST(x.cid).name}</td><td>${x.total}</td><td>${ed || x.cid === me() ? x.booked : '—'}</td><td>${x.open}</td></tr>`).join('')}</table><p class="note">按当前${period === 'month' ? '自然月' : '周一至周日'}统计。所有中心老师可看排班总数；本人可看自己的预约负荷，中心负责人可看全中心。</p></div></div>
     <div class="card" style="margin-top:16px"><h3>改班和停诊登记<span class="sp"></span><button class="btn sec xs" data-act="mo" data-arg="schedReg:">登记一次</button></h3>
       ${reg.length ? `<table class="t"><tr><th>登记时间</th><th>老师</th><th>类型</th><th>日期</th><th>说明</th></tr>${reg.map(x => `<tr><td>${fmt(new Date(x.at))}</td><td>${ST(x.cid).name}</td><td>${x.type}</td><td>${esc(x.day)}</td><td>${esc(x.why)}</td></tr>`).join('')}</table>` : '<p class="note" style="margin:0">还没有登记。</p>'}
-      <p class="note">临时改班、病假停诊要登记，中心负责人会收到通知。受影响的预约记为「中心调整 · 待重新安排」，不算学生的「时间都不合适」。</p></div>`; };
+      <p class="note">临时改班或停诊请在这里登记，中心负责人会收到通知。停诊时立即关闭相应时段，受影响的学生会收到说明，由中心重新安排，不计入学生的改期或取消次数。</p></div>`; };
 
 /* 号池配置：中心负责人改，其他人只看 */
 const bkPool = () => { const ed = S.role === 'L3', P = RULES.pool, N = poolN(), used = c => ivb().list.filter(x => x.st !== 'new' && SU(x.sid).college === c).length, dis = ed ? '' : 'disabled';
