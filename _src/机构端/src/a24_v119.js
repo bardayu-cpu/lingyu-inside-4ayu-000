@@ -46,8 +46,9 @@ const cwFind = x => { const t = cwNorm(x), hit = [], neg = [];
   return { hit, neg }; };
 /* 一级、二级命中才算「有安全相关的表达」；三级只记为辅助信号 */
 TALK_RE.test = x => { const { hit } = cwFind(x); if (hit.length) cwHits.push(...hit); return hit.some(w => cwL(w) <= 2); };
-const _nc19 = newCrisis; newCrisis = function (s, src, type, urgent) {
-  if (/谈话记录|追加/.test(src || '') && cwHits.length) urgent = cwHits.some(w => cwL(w) === 1);
+const _nc19 = newCrisis; newCrisis = function (s, src, type, urgent, words) {
+  const hits = words || cwHits;
+  if (/谈话记录|追加/.test(src || '') && hits.length) urgent = hits.some(w => cwL(w) === 1);
   const keep = cwHits; cwHits = []; try { return _nc19.call(this, s, src, type, urgent); } finally { cwHits = keep; } };
 
 const cwPage19 = () => { const ed = S.role === 'L3', F = S.form, q = cwNorm(S.f.cwq || ''), open = S.cwOpen || {};

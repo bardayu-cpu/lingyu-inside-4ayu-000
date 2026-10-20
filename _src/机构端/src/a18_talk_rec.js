@@ -73,6 +73,8 @@ function recView() { const t = TALKS.find(x => x.id === S.rv), v = recVis(t), mi
 
 /* ---------- 保存 ---------- */
 const recRisk = R => TALK_RE.test([R.situ, R.need, R.topic, R.cwhy, ...Object.values(R.pp || {}).map(p => p.txt)].join(' '));
+// 比较命中的词项，不能用“以前已命中过”的布尔值吞掉本次新增表达。
+const talkRiskWords = txt => cwFind(txt).hit.filter(w => cwL(w) <= 2);
 const recDone = (t, ids, R) => ITEMS.filter(x => ids.includes(x.id) && x.st === 'open').forEach(x => { x.st = 'done'; x.rec = t.id; x.doneAt = new Date(NOW); const s = SU(x.sid), a = (s.asks || []).find(q => q.item === x.id && !q.done);
   if (a) { a.st = '完成'; a.log.push({ at: new Date(NOW), st: '完成', note: '已谈心，见谈话记录' }); a.done = { at: new Date(NOW), note: '已谈心' }; notify(a.by, '站内', `${ST(me()).name} 已完成谈心：${nm(s)}`, s.id); } });
 const addNext = (t, ids) => ids.forEach(id => { const st0 = later(NEXTS[t.next] * 24), x = addItem({ sid: id, to: me(), src: 'next', startAt: st0, due: new Date(st0.getTime() + 7 * 864e5), rec: t.id, why: `上次谈话约定 ${t.next}` }); if (inCrisis(id)) { x.prevSt = 'open'; x.st = 'frozen'; x.frozenAt = new Date(NOW); } });   // 危机中生成的事项直接冻结，结案时一起决定
@@ -84,9 +86,10 @@ function recSave(draft) { const R = S.rec, edit = R.id && TALKS.find(t => t.id =
   if (!edit && R.sids.some(id => !tkScope(SU(id)))) return toast('这个学生不在你的管理范围里，不能写记录');
   const at = recAt(R); if (!at) return toast('请选择谈话日期，时间按 14:30 的格式填'); if (at > NOW) return toast('谈话时间不能晚于现在');
   if (!draft) { if (!R.who.length) return toast('请选择谈话对象'); if (!R.mode) return toast('请选择方式'); if (!R.result) return toast('请选择结果'); }
-  const multi = R.sids.length > 1, riskC = TALK_RE.test([R.situ, R.need, R.topic, R.cwhy].join(' ')), riskP = R.sids.filter(id => TALK_RE.test((R.pp[id] || {}).txt || ''));
-  const oldC = formal && TALK_RE.test([edit.situ, edit.need, edit.topic, edit.cwhy].join(' ')), oldP = formal ? (edit.sids || [edit.sid]).filter(id => TALK_RE.test(((edit.pp || {})[id] || {}).txt || '')) : [];
-  const cHit = riskC && !oldC, pHit = riskP.filter(id => !oldP.includes(id));
+  const commonWords = talkRiskWords([R.situ, R.need, R.topic, R.cwhy].join(' ')), oldCommon = formal ? talkRiskWords([edit.situ, edit.need, edit.topic, edit.cwhy].join(' ')) : [];
+  const addedCommon = commonWords.filter(w => !oldCommon.includes(w)), personalWords = {}, addedPersonal = {};
+  R.sids.forEach(id => { personalWords[id] = talkRiskWords((R.pp[id] || {}).txt || ''); const old = formal ? talkRiskWords(((edit.pp || {})[id] || {}).txt || '') : []; addedPersonal[id] = personalWords[id].filter(w => !old.includes(w)); });
+  const multi = R.sids.length > 1, riskC = commonWords.length > 0, riskP = R.sids.filter(id => personalWords[id].length), cHit = addedCommon.length > 0, pHit = R.sids.filter(id => addedPersonal[id].length);
   if (!draft && cHit && multi && !R.cw) { R.askWho = true; return toast('共同部分里有安全相关的表达，请先指定涉及哪个学生'); }
   R.risk = riskC || riskP.length > 0 || (formal && !!edit.risk);       // 先算危机，再算 SIS 默认值
   if (!draft && sisDef(R) && (!R.prev || !R.same) && (!R.src0 || !(R.t0 || '').trim())) return toast('同步 SIS 要补最初发现途径和时间；不同步可以取消勾选');
@@ -127,6 +130,7 @@ function recSave(draft) { const R = S.rec, edit = R.id && TALKS.find(t => t.id =
   if (hitIds.length) { const ks = hitIds.map(id => { const s = SU(id), k0 = CRISES.find(k => k.sid === id && k.st !== 'closed');
       if (k0) { k0.recs = (k0.recs || []).concat(t.id); s.tl.push({ at: new Date(NOW), t: '谈话记录里又出现安全相关的表达（已附到危机记录，值班可以查看）', who: ST(me()).name, k: 'crisis', r: 1 });
         [s.owner || 'c5', dutyNow()].filter((u, i, a) => a.indexOf(u) === i).forEach(u => notify(u, '站内', `${ST(me()).name} 的谈话记录里出现安全相关的表达：${nm(s)}`, s.id)); log(`谈话记录里又出现安全相关的表达，已附到现有危机（${tkId(t)}）`, s, { k: 'report', cat: '危机', noTl: 1 }); return k0; }
-      const k = newCrisis(s, `${ST(me()).name} 的谈话记录里出现安全相关的表达（保存时自动报告）`, '学院报告', true); if (k) { k.by = me(); k.fromRec = t.id; } log('谈话记录命中危机词，自动报告紧急情况', s, { k: 'report', cat: '危机', r: 1 }); return k; }).filter(Boolean);
+      const words = [...(cHit && (R.cw === 'all' || !multi || R.cw === id) ? addedCommon : []), ...addedPersonal[id]];
+      const k = newCrisis(s, `${ST(me()).name} 的谈话记录里出现安全相关的表达（保存时自动报告）`, '学院报告', true, words); if (k) { k.by = me(); k.fromRec = t.id; } log('谈话记录命中危机词，自动报告紧急情况', s, { k: 'report', cat: '危机', r: 1 }); return k; }).filter(Boolean);
     if (ks[0]) S.mo = `tkCrisis:${ks[0].id}`; return; }
   toast(doneIds.length ? `已保存，完成了 ${doneIds.length} 个事项` : '已保存'); }
