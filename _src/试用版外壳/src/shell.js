@@ -51,8 +51,8 @@ function fromAdm(p, c) {
     if (b && b.id === a.id && b.st === 'move' && (a.st !== 'move' || a.proposal !== b.proposal)) ev.push({ t: 'move', core: k, date: b.date, ti: b.t, proposal: b.proposal });
     else if (a.st === 'move' && b && b.id === a.id && b.st === 'ok') ev.push({ t: 'moveConfirmed', core: k });
     else if (a.st === 'confirm' && b && b.id === a.id && b.st === 'ok') ev.push(moved ? { t: 'move', core: k, date: b.date, ti: b.t } : { t: 'confirm', core: k });
-    else if (a.st === 'confirm' && !b) ev.push({ t: 'decline', core: k });
-    else if (a.st === 'ok' && !b && c.__no && c.__no[k]) ev.push({ t: 'decline', core: k });
+    else if (a.st === 'confirm' && !b) ev.push(Object.assign({ t: 'decline', core: k }, (c.__bookResult || {})[k] || {}));
+    else if (a.st === 'ok' && !b && c.__no && c.__no[k]) ev.push(Object.assign({ t: 'decline', core: k }, (c.__bookResult || {})[k] || {}));
     else if (a.st === 'change' && b && b.id === a.id && b.st === 'ok') ev.push(moved ? { t: 'agree', core: k } : { t: 'deny', core: k });
     else if (a.st === 'change' && !b) ev.push({ t: 'agree', core: k });
     else if (a.st === 'ok' && b && b.st === 'ok' && b.id === a.id && moved) ev.push({ t: 'move', core: k, date: b.date, ti: b.t }); });

@@ -9,7 +9,7 @@ function LY_ctx() { return { 端: '学生端', 场景: SCENES[S.scen].name, 页�
 function LY_in(ev) { const b = S.bk; let msg = '';
   if (ev.t === 'ivcSync') { ivReceive(ev.ivc); render(); return ''; }
   if (ev.t === 'confirm' && b && b.st === '待确认') { ACT.zConfirm(); msg = '学生端收到「老师已确认你的预约」'; }
-  else if (ev.t === 'decline' && b && !b.pend) { ACT.zDecline(); msg = '学生端收到「老师这次无法接待」'; }
+  else if (ev.t === 'decline' && b && !b.pend) { const invited = ev.inv || b.inv; ACT.zDecline(); if (invited && S.ivc) { S.ivc.st = 'entry'; S.ivc.ik = S.ivc.ik || b.intake; S.page = 'book'; S.bookTab = 'time'; } msg = invited ? '学生端回到主动邀约选时间，入口和预咨询保留' : '学生端收到「老师这次无法接待」'; }
   else if (ev.t === 'agree' && b && b.pend) { ACT.zPend(); msg = '学生端收到「老师同意了你的申请」'; }
   else if (ev.t === 'deny' && b && b.pend) { const ty = b.pend.type === 'cancel' ? '取消' : '改期'; b.pend = null;
     addMsg('cal', [`你的${ty}申请未通过`, 'Your request was not approved'], ['原预约保持不变。', 'Your original appointment stays.'], 'mybook'); msg = `学生端收到「${ty}申请未通过」`; }
