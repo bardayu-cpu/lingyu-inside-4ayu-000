@@ -30,7 +30,7 @@ function syncNote(t) { if (!t) return; const n = $('#sync'); n.textContent = '�
 function fromStu(p, c) {
   if (!p || p.inst !== c.inst || p.scen !== c.scen) return [];
   const ev = [], a = p.bk, b = c.bk, core = c.core, same = (x, y) => x && y && x.cid === y.cid && x.date === y.date && x.ti === y.ti;
-  if (b && (b.st === '待确认' || b.st === '已确认' && !b.moved && b.kind === '预咨询') && !b.pend && (!a || !same(a, b))) ev.push({ t: 'book', core, cid: b.cid, date: b.date, ti: b.ti, mode: b.mode, kind: b.kind, inv: b.inv });
+  if (b && (b.st === '待确认' || b.st === '已确认' && !b.moved && b.kind === '预咨询') && !b.pend && (!a || !same(a, b))) ev.push({ t: 'book', core, cid: b.cid, date: b.date, ti: b.ti, mode: b.mode, kind: b.kind, inv: b.inv, ivId: b.ivId });
   if (b && b.pend && !(a && a.pend)) ev.push({ t: 'req', core, type: b.pend.type, cid: b.pend.cid || b.cid, date: b.pend.date, ti: b.pend.ti });
   if (a && !b && a.st === '待确认' && !a.pend) ev.push({ t: 'cancel', core });
   if (a && b && same(a, b) && a.st === '待确认' && b.st === '已确认') ev.push({ t: 'ok', core });
@@ -40,6 +40,7 @@ function fromStu(p, c) {
   const da = p.decl || [], db = c.decl || []; db.filter(x => !da.includes(x)).forEach(x => ev.push({ t: 'decl', core, task: x, on: true })); da.filter(x => !db.includes(x)).forEach(x => ev.push({ t: 'decl', core, task: x, on: false }));
   const ia = a && a.intake, ib = b && b.intake;
   if (ib && ['sent', 'skipped'].includes(ib.st) && (!ia || ia.st !== ib.st || ia.ver !== ib.ver)) ev.push({ t: 'intake', core, intake: ib });
+  if (c.ivc && c.ivc.rv > ((p.ivc && p.ivc.rv) || 0)) ev.push({ t: 'ivcReply', core, ivc: c.ivc });
   const ra = (p.inv || []), rb = (c.inv || []); rb.forEach(v => { const o = ra.find(x => x.id === v.id); if (v.rv > ((o && o.rv) || 0)) ev.push({ t: 'invReply', core, id: v.id, r: v.r, slots: v.slots, why: v.why, ver: v.ver }); });
   return ev;
 }
@@ -53,6 +54,7 @@ function fromAdm(p, c) {
     else if (a.st === 'change' && !b) ev.push({ t: 'agree', core: k });
     else if (a.st === 'ok' && b && b.st === 'ok' && b.id === a.id && moved) ev.push({ t: 'move', core: k, date: b.date, ti: b.t }); });
   Object.entries(c.__bookReject || {}).forEach(([core, r]) => { if (!p.__bookReject || !p.__bookReject[core] || p.__bookReject[core].token !== r.token) ev.push(Object.assign({ t: 'bookRejected', core }, r)); });
+  Object.entries(c.__ivc || {}).forEach(([core,v]) => { if (v && JSON.stringify(v) !== JSON.stringify((p.__ivc || {})[core])) ev.push({ t: 'ivcSync', core, ivc: v }); });
   const ia = p.__inv || {}; Object.entries(c.__inv || {}).forEach(([k, L]) => L.forEach(v => { const o = (ia[k] || []).find(x => x.id === v.id);
     if (!o) ev.push({ t: 'invite', core: k, inv: v }); else if (o.st !== v.st || o.ver !== v.ver || o.start !== v.start) ev.push({ t: 'invUpd', core: k, inv: v }); }));
   return ev;
@@ -64,7 +66,9 @@ window.addEventListener('message', e => {
     else { const core = last['学生端'] && last['学生端'].core; fromAdm(p, d.snap).filter(ev => ev.core === core).forEach(ev => post('学生端', { t: 'ev', ev })); }
     const iv = last['机构端'] && last['机构端'].__inv, sc = last['学生端'];
     if (iv && sc && (d.side === '学生端' ? d.init || (p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst)) : !p)) post('学生端', { t: 'ev', ev: { t: 'invSync', invs: iv[sc.core] || [] } });
-    const schedule = last['机构端'] && last['机构端'].__sched; if (schedule && (d.side === '学生端' ? d.init || p && p.scen !== d.snap.scen : !p || JSON.stringify(p.__sched) !== JSON.stringify(schedule))) post('学生端', { t: 'ev', ev: { t: 'schedSync', slots: schedule } });
+    const schedule = last['机构端'] && last['机构端'].__sched; if (schedule && (d.side === '学生端' ? d.init || p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst) : !p || JSON.stringify(p.__sched) !== JSON.stringify(schedule))) post('学生端', { t: 'ev', ev: { t: 'schedSync', slots: schedule } });
+    const vc = last['机构端'] && last['机构端'].__ivc;
+    if (vc && sc && (d.side === '学生端' ? d.init || (p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst)) : !p)) post('学生端', {t:'ev', ev:{t:'ivcSync', ivc:vc[sc.core] || null}});
     const cf = last['机构端'] && last['机构端'].__cfg, pc = d.side === '机构端' && p && p.__cfg;
     if (cf && (d.side === '学生端' ? d.init : !pc || JSON.stringify(pc) !== JSON.stringify(cf))) post('学生端', { t: 'ev', ev: Object.assign({ t: 'cfg' }, cf) }); }
   else if (d.t === 'applied') syncNote(d.msg ? `${d.side === '机构端' ? '学生端 → 机构端' : '机构端 → 学生端'}：${d.msg}` : '');
