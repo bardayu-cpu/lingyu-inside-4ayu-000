@@ -244,7 +244,7 @@ Object.assign(ACT, {
   poolAppNo(id) { const a = RULES.pool.apps.find(x => x.id === id); if (!a || S.role !== 'L3') return; a.st = 'no'; log(`号池配置 · 没有批准 ${a.col} 的额度申请`, null, { cat: '配置', obj: '号池' }); notify(a.by, '站内', '你的额度申请没有批准', null); toast('已处理'); },
   ivAppGo() { const F = S.form, n = +F.apn; if (!F.apc) return toast('请选学院'); if (!(n > 0)) return toast('请写要多少个'); if (!(F.apw || '').trim()) return toast('请写一句为什么');
     RULES.pool.apps.push({ id: 'ap' + (RULES.pool.apps.length + 1), col: F.apc, n, why: F.apw.trim(), by: me(), at: new Date(NOW), st: 'wait' }); log(`主动邀约 · 申请额度：${F.apc} ${n} 个`, null, { cat: '预约', obj: '号池' }); notify('c5', '站内', `${ST(me()).name} 申请 ${F.apc} 的邀约额度 ${n} 个`, null); S.mo = null; toast('已提交，中心负责人会在「号池配置」里处理'); },
-  ivSendGo(t) { const L = ivMine().filter(x => x.st === 'new' && (t === 'all' || (+t >= 4 ? x.lv >= 4 : x.lv === +t))); if (!L.length) return; L.forEach(x => { x.st = 'sent'; x.at = new Date(NOW); x.due = ivDue(2); });
+  ivSendGo(t) { if (!['L2', 'L3'].includes(S.role)) return toast('只有负责老师和中心负责人可以发送邀约'); const L = ivMine().filter(x => x.st === 'new' && (t === 'all' || (+t >= 4 ? x.lv >= 4 : x.lv === +t))); if (!L.length) return; L.forEach(x => { x.st = 'sent'; x.at = new Date(NOW); x.due = ivDue(2); });
     log(`主动邀约 · 发邀约卡 ${L.length} 人（${t === 'all' ? '全部' : +t >= 4 ? '4 级及以上' : `${t} 级`}）`, null, { cat: '预约', obj: '主动邀约' }); S.mo = null; toast(`已发给 ${L.length} 位学生，24 小时后自动提醒一次`); },
   ivAddGo() { if (S.role !== 'L3') return toast('只有中心负责人能添加学生'); const B = ivb(), F = S.form; if (F.ivFileBusy) return toast('表格还在读取，请稍后');
     const ids = [...(F.ivPick || []), ...(F.ivIds || '').split(/[\s,，、]+/).filter(Boolean), ...ivFileIds(F)], seen = new Set(), rows = { in: [], bad: [], skip: [], has: [] };
