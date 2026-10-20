@@ -119,7 +119,7 @@ const ivb = () => { if (IVB) return IVB; if (RULES.ivb) return IVB = RULES.ivb;
   IVB = RULES.ivb = { name: '2026 秋季普测 · 第 1 批', at: ago(30), by: 'c5', list, piles: { bad: [], skip: skip.map(s => ({ sid: s.id, why: '危机中，由危机流程接手' })), has: has.map(s => ({ sid: s.id, why: '已有在途预约，由负责老师确认是否用这次预约完成本轮访谈' })) } };
   return IVB; };
 const ivDue = n => ivStamp(+NOW + n * 24 * H);
-const ivMine = () => ivb().list.filter(x => S.role === 'L3' || x.resp === me());
+const ivMine = () => ['L2', 'L3'].includes(S.role) ? ivb().list.filter(x => S.role === 'L3' || x.resp === me()) : [];
 const ivMatches = (x, k) => k === 'sent' ? x.st !== 'new' : k === 'acc' ? !!x.acceptedAt || ['ik', 'queue', 'entry', 'sub', 'ok', 'nofit'].includes(x.st) : x.st === k;
 const ivCnt = L => Object.fromEntries(IV_KPI.map(([k]) => [k, L.filter(x => ivMatches(x, k)).length]));
 
@@ -236,7 +236,7 @@ Object.assign(ACT, {
   aisub(k) { S.tabs.aisub = k; },
   ikBank(k) { if (iktDirty()) return toast('先保存或放弃这套题库的修改，再切换'); S.ikBank = k; },
   ivF(k) { S.f.ivst = S.f.ivst === k ? '' : k; },
-  bOpen(id) { const b = BOOK.find(x => x.id === id); if (!b) return; log('查看预约申请（预咨询摘要、普测结果、档案，按账号权限）', SU(b.sid), { cat: '查看', noTl: 1 }); markViewed(b); ACT.open(b.sid); },
+  bOpen(id) { const b = BOOK.find(x => x.id === id); if (!b || !mayBook(b)) return toast('没有权限查看这份预约申请'); log('查看预约申请（预咨询摘要、普测结果、档案，按账号权限）', SU(b.sid), { cat: '查看', noTl: 1 }); markViewed(b); ACT.open(b.sid); },
   poolR(v) { if (S.role !== 'L3') return; const P = RULES.pool, was = P.inv; if (+v === was) return; P.inv = +v; const N = poolN(); log(`号池配置 · 普通号 / 主动邀约号：${100 - was} / ${was} → ${100 - P.inv} / ${P.inv}（普通号 ${N.norm} 个、主动邀约号 ${N.inv} 个）`, null, { cat: '配置', obj: '号池' }); poolNoti(`号池比例调整为普通 ${100 - P.inv} / 主动邀约 ${P.inv}`); toast('已调整，已通知中心老师'); },
   poolH(d) { if (S.role !== 'L3') return; const P = RULES.pool, was = P.hold; P.hold = Math.max(0, P.hold + +d); if (P.hold === was) return; log(`号池配置 · 暂留额度 ${was} → ${P.hold}`, null, { cat: '配置', obj: '号池' }); poolNoti(`主动邀约号暂留额度由 ${was} 个调整为 ${P.hold} 个，可发额度为 ${poolN().can} 个`); toast(+d < 0 ? '已释放额度，已通知中心老师' : '已暂留额度，已通知中心老师'); },
   poolAppOk(id) { const P = RULES.pool, a = P.apps.find(x => x.id === id); if (!a || a.st !== 'wait' || S.role !== 'L3') return; if (P.hold < a.n) return toast(`暂留额度只剩 ${P.hold} 个，可以先从别的学院挪`); P.hold -= a.n; P.col[a.col] = (P.col[a.col] || 0) + a.n; a.st = 'ok';
