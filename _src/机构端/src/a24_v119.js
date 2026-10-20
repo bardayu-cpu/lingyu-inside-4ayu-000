@@ -119,7 +119,8 @@ const ivb = () => { if (IVB) return IVB; if (RULES.ivb) return IVB = RULES.ivb;
   return IVB; };
 const ivDue = n => { const d = new Date(NOW); d.setDate(d.getDate() + n); return `${d.getMonth() + 1}/${d.getDate()} 18:00`; };
 const ivMine = () => ivb().list.filter(x => S.role === 'L3' || x.resp === me());
-const ivCnt = L => { const n = k => L.filter(x => x.st === k).length; return { sent: L.filter(x => x.st !== 'new').length, acc: L.filter(x => ['ik', 'queue', 'entry', 'sub', 'ok', 'nofit'].includes(x.st)).length, no: n('no'), ik: n('ik'), queue: n('queue'), entry: n('entry'), sub: n('sub'), ok: n('ok') }; };
+const ivMatches = (x, k) => k === 'sent' ? x.st !== 'new' : k === 'acc' ? !!x.acceptedAt || ['ik', 'queue', 'entry', 'sub', 'ok', 'nofit'].includes(x.st) : x.st === k;
+const ivCnt = L => Object.fromEntries(IV_KPI.map(([k]) => [k, L.filter(x => ivMatches(x, k)).length]));
 
 /* 预咨询题库：普通咨询（原来的模板）、高危咨询（主动邀约来的学生用） */
 const IKH_Q = ['topics', 'trouble', 'dur', 'impact', 'sleep', 'support', 'expect', 'extra'];
@@ -162,11 +163,11 @@ const bkMan = () => { const r = S.role; let list = BOOK.slice(); if (r === 'L2')
 
 /* 主动邀约：批次、核对四堆、发邀约卡、进度、容量缺口、申请额度 */
 const bkInv = () => { const B = ivb(), L = ivMine(), c = ivCnt(L), P = poolN(), wait = ivb().list.filter(x => ['new', 'sent', 'ik', 'queue'].includes(x.st)).length, gap = Math.max(0, B.list.length - c.no - P.can);
-  const f = S.f.ivst || '', rows = L.filter(x => !f || x.st === f), nNew = L.filter(x => x.st === 'new').length, tiers = [...new Set(L.filter(x => x.st === 'new').map(x => x.lv >= 4 ? 4 : x.lv))];
+  const f = S.f.ivst || '', rows = L.filter(x => !f || ivMatches(x, f)), nNew = L.filter(x => x.st === 'new').length, tiers = [...new Set(L.filter(x => x.st === 'new').map(x => x.lv >= 4 ? 4 : x.lv))];
   return `<p class="intro">${I('info', 's')}<span>普测命中主动邀约等级（${RULES.pool.ivLv} 级及以上，在「号池配置」里设）的学生，由老师按批确认后发<b>邀约卡</b>。学生接受后马上做 AI 预咨询（不占号），做完按顺序自动拿到<b>人工预约入口</b>，号不够就排队。邀约卡和入口的 24 小时提醒按规则自动发；普测结束后系统不会主动给任何学生发卡。</span></p>
     <div class="card"><h3>${I('users')}${B.name}<span class="sp"></span><small>${fmt(B.at)} 由 ${ST(B.by).name} 建 · ${S.role === 'L3' ? '全部学生' : '你负责的学生'}</small>${S.role === 'L3' ? `<button class="btn sec xs" data-act="mo" data-arg="ivAdd:">${I('plus', 's')}加学生</button>` : ''}</h3>
       <div class="kv"><span>核对结果</span><b>进入批次 ${B.list.length} 人 · 对不上 ${B.piles.bad.length} · 不走预约队列 ${B.piles.skip.length}（${B.piles.skip.map(x => `${nm(SU(x.sid))}：${x.why}`).join('；') || '—'}） · 已有安排 ${B.piles.has.length}${B.piles.has.length ? `（${B.piles.has.map(x => nm(SU(x.sid))).join('、')}，已有在途预约）` : ''}</b></div>
-      <div class="grid g4" style="margin:12px 0">${IV_KPI.map(([k, n]) => `<button class="kpi ${f === k ? 'on' : ''}" data-act="ivF" data-arg="${k}"><small>${n}</small><b>${c[k]}</b><span>${k === 'sent' ? `共 ${L.length} 人` : k === 'acc' ? `接受率 ${c.sent ? Math.round(c.acc / c.sent * 100) : 0}%` : k === 'ok' ? `成功率 ${c.ok + c.sub + c.entry ? Math.round(c.ok / (c.ok + c.sub + c.entry) * 100) : 0}%` : '点这里筛选'}</span></button>`).join('')}</div>
+      <div class="grid g4" style="margin:12px 0">${IV_KPI.map(([k, n]) => `<button class="kpi ${f === k ? 'on' : ''}" data-act="ivF" data-arg="${k}"><small>${n}</small><b>${c[k]}</b><span>${k === 'sent' ? `累计发出 · 本批共 ${L.length} 人` : k === 'acc' ? `累计接受率 ${c.sent ? Math.round(c.acc / c.sent * 100) : 0}%` : k === 'ok' ? `成功率 ${c.ok + c.sub + c.entry ? Math.round(c.ok / (c.ok + c.sub + c.entry) * 100) : 0}%` : '点这里筛选'}</span></button>`).join('')}</div>
       <div class="dbox ${gap ? 'warn' : ''}"><b>${I('alert', 's')}容量缺口</b><p style="margin:4px 0 0">名单 ${B.list.length} 人（不含不参加的 ${c.no} 人），本窗口可发额度 ${P.can} 个号${gap ? `，<b>至少 ${gap} 人这一窗口约不上</b>。缺口由中心负责人处理：分阶段排到下一个 30 天、加排班、转辅导员谈心或团体辅导，或继续等（负责老师按等待期限复核）。` : '，够用。'}</p>
         <div style="margin-top:8px;display:flex;gap:8px">${S.role === 'L3' && gap ? `<button class="btn sec xs" data-act="btab" data-arg="pool">去号池配置调额度</button>` : ''}<button class="btn sec xs" data-act="mo" data-arg="ivApp:">申请额度</button></div></div></div>
     <div class="card"><h3>名单<span class="sp"></span>${f ? `<button class="btn ghost xs" data-act="ivF" data-arg="">看全部</button>` : ''}${nNew ? `${tiers.map(t => `<button class="btn sec xs" data-act="mo" data-arg="ivSend:${t}">只发 ${t >= 4 ? '4 级及以上' : `${t} 级`}（${L.filter(x => x.st === 'new' && (t >= 4 ? x.lv >= 4 : x.lv === t)).length}）</button>`).join('')}<button class="btn pri xs" data-act="mo" data-arg="ivSend:all">发邀约卡（${nNew} 人）</button>` : ''}</h3>
