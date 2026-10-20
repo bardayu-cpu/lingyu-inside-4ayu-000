@@ -75,7 +75,8 @@ with sync_playwright() as p:
         chk('UNKNOWN_ID' in page.locator('#modal').inner_text() and '四堆新增甲' in page.locator('#modal').inner_text(), 'R13 batch and classification details survive reload')
 
     if 'all' in wanted or 'R13b' in wanted:
-        E("mk({name:'本轮不参加甲',sid:'GPT2001A',lv:4,stage:'L2'});mk({name:'旧单人邀约乙',sid:'GPT2002A',lv:4,stage:'invited'});mk({name:'本轮已访谈丙',sid:'GPT2003A',lv:4,stage:'follow',done:new Date(2026,9,8)});PENDING.push({sid:STU.find(x=>x.sid==='GPT2001A').id,declined:new Date(NOW)});STU.find(x=>x.sid==='GPT2002A').invAt=new Date(NOW);BOOK.push({id:'gptDone',sid:STU.find(x=>x.sid==='GPT2003A').id,cid:'c1',day:-1,t:0,st:'done'});ACT.mo('ivAdd:');S.form.ivIds='GPT2001A GPT2002A GPT2003A';render()")
+        # mk is a seed-data helper; reset its unsaved fixture counter after the persistence test.
+        E("sn=Math.max(...STU.map(s=>Number(s.id.slice(1))));mk({name:'本轮不参加甲',sid:'GPT2001A',lv:4,stage:'L2'});mk({name:'旧单人邀约乙',sid:'GPT2002A',lv:4,stage:'invited'});mk({name:'本轮已访谈丙',sid:'GPT2003A',lv:4,stage:'follow',done:new Date(2026,9,8)});PENDING.push({sid:STU.find(x=>x.sid==='GPT2001A').id,declined:new Date(NOW)});STU.find(x=>x.sid==='GPT2002A').invAt=new Date(NOW);BOOK.push({id:'gptDone',sid:STU.find(x=>x.sid==='GPT2003A').id,cid:'c1',day:-1,t:0,st:'done'});ACT.mo('ivAdd:');S.form.ivIds='GPT2001A GPT2002A GPT2003A';render()")
         page.locator('[data-act=ivAddGo]').click()
         res = E('S.ivRes')
         chk(len(res['in']) == 0 and len(res['skip']) == 1 and len(res['has']) == 2, 'R13b declined survey, active single invitation and completed interview are not re-added')
