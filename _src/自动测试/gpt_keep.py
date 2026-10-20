@@ -74,7 +74,9 @@ def main():
         page.wait_for_timeout(500)
         student.evaluate("reset('A');prepare('home');render()")
         page.wait_for_timeout(250)
-        student.evaluate("ACT.pickSlot('c1:0:1');ACT.bookSubmit();render()")
+        student.evaluate("""(() => { const key=(S._slotAllowed || [])[0]; let arg='c1:0:1';
+          if(key){const [cid,date,time]=key.split('|');arg=cid+':'+DAYS.findIndex(d=>d.toISOString().slice(0,10)===date)+':'+DATA.times.indexOf(time);}
+          ACT.pickSlot(arg);ACT.bookSubmit();render(); })()""")
         page.wait_for_timeout(500)
         booking = admin.evaluate("BOOK.find(b=>b.sid===CORE.lin.id && b.st==='confirm').id")
         assert student.evaluate("S.bk.st==='待确认'"), 'booking must be pending before first refresh'
