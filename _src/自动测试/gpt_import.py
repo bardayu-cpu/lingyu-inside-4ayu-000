@@ -74,6 +74,13 @@ with sync_playwright() as p:
         page.locator('[data-act=mo][data-arg="ivChecks:"]').click()
         chk('UNKNOWN_ID' in page.locator('#modal').inner_text() and '四堆新增甲' in page.locator('#modal').inner_text(), 'R13 batch and classification details survive reload')
 
+    if 'all' in wanted or 'R13b' in wanted:
+        E("mk({name:'本轮不参加甲',sid:'GPT2001A',lv:4,stage:'L2'});mk({name:'旧单人邀约乙',sid:'GPT2002A',lv:4,stage:'invited'});mk({name:'本轮已访谈丙',sid:'GPT2003A',lv:4,stage:'follow',done:new Date(2026,9,8)});PENDING.push({sid:STU.find(x=>x.sid==='GPT2001A').id,declined:new Date(NOW)});STU.find(x=>x.sid==='GPT2002A').invAt=new Date(NOW);BOOK.push({id:'gptDone',sid:STU.find(x=>x.sid==='GPT2003A').id,cid:'c1',day:-1,t:0,st:'done'});ACT.mo('ivAdd:');S.form.ivIds='GPT2001A GPT2002A GPT2003A';render()")
+        page.locator('[data-act=ivAddGo]').click()
+        res = E('S.ivRes')
+        chk(len(res['in']) == 0 and len(res['skip']) == 1 and len(res['has']) == 2, 'R13b declined survey, active single invitation and completed interview are not re-added')
+        chk(all(term in page.locator('#modal').inner_text() for term in ['本轮普测选择了不参加','已收到有效的单人预约邀请','本轮已完成访谈']), 'R13b check result explains each real source-state exclusion')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 print(f'gpt_import {",".join(sorted(wanted))}: {checks-len(failures)} passed, {len(failures)} failed')

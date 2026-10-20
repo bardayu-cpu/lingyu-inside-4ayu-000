@@ -253,7 +253,10 @@ Object.assign(ACT, {
     ids.forEach(id => { const s = STU.find(x => x.id === id || x.sid === id); if (!s) return add('bad', id, null, '不在名册');
       if (seen.has(s.id)) return add('bad', id, s, '本次重复学号'); seen.add(s.id);
       if (CRISES.some(k => k.sid === s.id && k.st !== 'closed')) return add('skip', id, s, '危机中，由危机流程接手');
+      if (PENDING.some(row => (row.sid === s.id || row.sid === s.sid) && row.declined)) return add('skip', id, s, '本轮普测选择了不参加');
       if (B.list.some(x => x.sid === s.id)) return add('has', id, s, '已在本批次'); if (activeBook(s)) return add('has', id, s, '已有在途预约，由负责老师确认是否承接本轮访谈');
+      if (BOOK.some(book => book.sid === s.id && ['record', 'done'].includes(book.st) && s.done && slotDate(book.day, book.t) >= new Date(s.done) && slotDate(book.day, book.t) <= NOW)) return add('has', id, s, '本轮已完成访谈');
+      if (s.invAt && hrs(new Date(s.invAt)) < 48 && !['declined', 'noresp'].includes(s.queue)) return add('has', id, s, '已收到有效的单人预约邀请');
       B.list.push({ sid: s.id, lv: curLv(s), st: 'new', resp: ivResp(s) }); add('in', id, s, '进入批次'); });
     B.piles = B.piles || {}; Object.keys(rows).forEach(kind => { B.piles[kind] = B.piles[kind] || []; rows[kind].forEach(row => { if (!B.piles[kind].some(old => (old.sid || old.id) === (row.sid || row.id) && old.why === row.why)) B.piles[kind].push({ ...row }); }); });
     B.checks = B.checks || []; B.checks.push({ at: new Date(NOW), by: me(), source: F.ivFile ? `导入 ${F.ivFile.name}` : F.ivIds ? '粘贴学号' : '勾选普测学生', piles: rows });
