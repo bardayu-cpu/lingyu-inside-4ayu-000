@@ -22,6 +22,7 @@ with sync_playwright() as p:
  page.evaluate("SCHM.c1['10/16'][2]='off';ivScheduleChanged({reason:'病假停诊'});render()")
  assert page.evaluate("ivb().list[0].st==='adjust'"),'sudden suspension adjusts impossible entry'
  assert page.evaluate("ivPool().slots.length===2 && RULES.pool.R===ivPool().slots.length-ivEntries().filter(x=>x.holdKey).length"),'numbers reflect actual schedule'
+ assert page.evaluate('(()=>{const p=ivPool();return p.norm+p.inv-p.protected===RULES.pool.R})()'),'reassignable counts exclude protected entries exactly once'
  assert not errors,errors
  b.close()
-print('gpt_capacity: 9 passed; 0 page errors')
+print('gpt_capacity: 10 passed; 0 page errors')

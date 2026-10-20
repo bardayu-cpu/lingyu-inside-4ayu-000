@@ -23,7 +23,7 @@ function ivPool() {
   slots.forEach(s => { if (new Date(`${s.date}T${s.time}:00`) - NOW < 72 * H && !held.has(s.key)) map[s.key] = 'norm'; });
   const inv = slots.filter(s => map[s.key] === 'inv').length, hold = Math.min(P.hold, Math.max(0, inv - held.size));
   P.R = Math.max(0, slots.length - held.size); P.FIX = held.size + schedSlots().filter(s => s.st === 'bk' && new Date(`${s.date}T${s.time}:00`) >= NOW && new Date(`${s.date}T${s.time}:00`) - NOW <= 30*24*H).length;
-  return { inv, norm: slots.length - inv, hold, can: Math.max(0, inv - hold), slots, invite: [...slots.filter(s => held.has(s.key)), ...slots.filter(s => map[s.key] === 'inv' && !held.has(s.key)).slice(0, Math.max(0, inv - held.size - hold))] };
+  return { inv, protected: slots.filter(s=>held.has(s.key)).length, norm: slots.length - inv, hold, can: Math.max(0, inv - hold), slots, invite: [...slots.filter(s => held.has(s.key)), ...slots.filter(s => map[s.key] === 'inv' && !held.has(s.key)).slice(0, Math.max(0, inv - held.size - hold))] };
 }
 function ivCompatible(x,slot) { const cid=x.allowedCid || SU(x.sid).owner; return (!cid || slot.cid===cid) && (!x.allowedMode || slot.modes.includes(x.allowedMode)) && (!x.allowedPlace || slot.place===x.allowedPlace); }
 function ivFits(x, slot, until) {
