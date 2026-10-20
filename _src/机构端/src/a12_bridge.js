@@ -19,7 +19,7 @@ function LY_in(ev) {
     if (!canTakeSlot(b.cid, b.day, b.t, b.id, b.sid)) { b.st = 'adjust'; bookChanged(b, 'adjust'); notify('c5', '站内 + 短信', '老师提议的时段发生冲突，请为学生重新安排', b.id); msg = '新时段已不可用，已请中心重新安排'; }
     else { b.st = 'ok'; b.moveAccepted = new Date(NOW); bookChanged(b, 'moveAccept'); log('学生接受老师提议的新时间，预约正式确认', s, { cat: '预约', k: 'book', sys: 1 }); notify(b.cid, '站内', `${s.name} 接受了新时间：${slotTxt(b)}`, b.id); msg = `${s.name} 已接受新时间，预约已确认`; }
   }
-  else if (ev.t === 'req' && b) { b.st = 'change'; b.req = { cid: ev.cid || b.cid, type: ev.type === 'cancel' ? '取消' : '改期', day: ev.date ? lyDay(ev.date) : b.day, t: ev.ti ?? b.t }; b.src = `学生申请${b.req.type}`;
+  else if (ev.t === 'req' && b) { b.st = 'change'; b.req = { cid: ev.cid || b.cid, type: ev.type === 'cancel' ? '取消' : '改期', day: ev.date ? lyDay(ev.date) : b.day, t: ev.ti ?? b.t }; b.src = b.inv ? '主动邀约' : `学生申请${b.req.type}`;
     log(`学生在学生端申请${b.req.type}`, s, { cat: '预约', k: 'book', sys: 1 }); notify(b.cid, '站内', `${nm(s)} 申请${b.req.type}`, b.id); msg = `${s.name} 申请${b.req.type}，等 ${ST(b.cid).name} 处理`; }
   else if (ev.t === 'cancel' && b && b.st === 'confirm') { b.st = 'cancelled'; setSlot(b.cid, b.day, b.t, 'open'); bookChanged(b, 'cancel'); log('学生在学生端取消了待确认的预约', s, { cat: '预约', k: 'book', sys: 1 }); msg = `${s.name} 取消了预约`; }
   else if (ev.t === 'ok' && b && b.st === 'confirm') { b.st = 'ok'; log('预约已确认（学生端演示按钮）', s, { cat: '预约', k: 'book', sys: 1 }); }

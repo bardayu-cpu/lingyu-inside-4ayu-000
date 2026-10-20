@@ -118,7 +118,7 @@ const ivb = () => { if (IVB) return IVB; if (RULES.ivb) return IVB = RULES.ivb;
     return x; });
   IVB = RULES.ivb = { name: '2026 秋季普测 · 第 1 批', at: ago(30), by: 'c5', list, piles: { bad: [], skip: skip.map(s => ({ sid: s.id, why: '危机中，由危机流程接手' })), has: has.map(s => ({ sid: s.id, why: '已有在途预约，由负责老师确认是否用这次预约承接' })) } };
   return IVB; };
-const ivDue = n => { const d = new Date(NOW); d.setDate(d.getDate() + n); return `${d.getMonth() + 1}/${d.getDate()} 18:00`; };
+const ivDue = n => ivStamp(+NOW + n * 24 * H);
 const ivMine = () => ivb().list.filter(x => S.role === 'L3' || x.resp === me());
 const ivMatches = (x, k) => k === 'sent' ? x.st !== 'new' : k === 'acc' ? !!x.acceptedAt || ['ik', 'queue', 'entry', 'sub', 'ok', 'nofit'].includes(x.st) : x.st === k;
 const ivCnt = L => Object.fromEntries(IV_KPI.map(([k]) => [k, L.filter(x => ivMatches(x, k)).length]));
@@ -173,7 +173,7 @@ const bkInv = () => { const B = ivb(), L = ivMine(), c = ivCnt(L), P = poolN(), 
         <div style="margin-top:8px;display:flex;gap:8px">${S.role === 'L3' && gap ? `<button class="btn sec xs" data-act="btab" data-arg="pool">去号池配置调额度</button>` : ''}<button class="btn sec xs" data-act="mo" data-arg="ivApp:">申请额度</button></div></div></div>
     <div class="card"><h3>名单<span class="sp"></span>${f ? `<button class="btn ghost xs" data-act="ivF" data-arg="">看全部</button>` : ''}${nNew ? `${tiers.map(t => `<button class="btn sec xs" data-act="mo" data-arg="ivSend:${t}">只发 ${t >= 4 ? '4 级及以上' : `${t} 级`}（${L.filter(x => x.st === 'new' && (t >= 4 ? x.lv >= 4 : x.lv === t)).length}）</button>`).join('')}<button class="btn pri xs" data-act="mo" data-arg="ivSend:all">发邀约卡（${nNew} 人）</button>` : ''}</h3>
       <table class="t"><tr><th>学生</th><th>等级</th><th>负责老师</th><th>状态</th><th>截止</th><th>预咨询</th></tr>${rows.map(x => { const s = SU(x.sid), it = x.ik, [t, cl] = IV_ST[x.st];
-        return `<tr><td><b>${nm(s)}</b><small>${s.college}</small></td><td>${lvV(s)}</td><td>${ST(x.resp).name}</td><td><span class="pill ${cl}">${t}</span></td><td>${x.st === 'entry' ? `入口 ${x.edue}` : x.st === 'sent' ? `回复 ${x.due}` : x.st === 'nofit' ? esc((x.fit || []).join('、')) : '—'}</td><td>${it && it.sum ? `<button class="lnk" data-act="mo" data-arg="ivIk:${x.sid}">${I('chat', 's')}看摘要</button>` : it ? `<span class="note">${{ skipped: '跳过了', draft: '已保存，未发送' }[it.st] || '—'}</span>` : '—'}${['nofit', 'late', 'adjust'].includes(x.st) ? `<button class="btn sec xs" data-act="ivReentry" data-arg="${x.id}">重新提供入口</button>` : ''}</td></tr>`; }).join('') || '<tr><td colspan="6" class="note">没有符合的学生</td></tr>'}</table>
+        return `<tr><td><b>${nm(s)}</b><small>${s.college}</small></td><td>${lvV(s)}</td><td>${ST(x.resp).name}</td><td><span class="pill ${cl}">${x.st === 'late' && x.lateType === 'entry' ? '入口已到期' : t}</span></td><td>${x.st === 'entry' ? `入口 ${x.edue}` : x.st === 'sent' ? `回复 ${x.due}` : x.st === 'nofit' ? esc((x.fit || []).join('、')) : '—'}</td><td>${it && it.sum ? `<button class="lnk" data-act="mo" data-arg="ivIk:${x.sid}">${I('chat', 's')}看摘要</button>` : it ? `<span class="note">${{ skipped: '跳过了', draft: '已保存，未发送' }[it.st] || '—'}</span>` : '—'}${['nofit', 'late', 'adjust'].includes(x.st) ? `<button class="btn sec xs" data-act="ivReentry" data-arg="${x.id}">重新提供入口</button>` : ''}</td></tr>`; }).join('') || '<tr><td colspan="6" class="note">没有符合的学生</td></tr>'}</table>
       <p class="note">顺序：先按等级分档（4 级及以上一档、3 级一档），同档按普测完成时间。邀约卡 48 小时有效，人工入口 48 小时内要提交申请；到期没处理的回到负责老师那里，由老师决定是否再发。</p></div>`; };
 
 /* R4：未发送草稿不进入机构端个案数据；清理旧演示版本已泄露的草稿。 */

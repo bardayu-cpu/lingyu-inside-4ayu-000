@@ -13,7 +13,7 @@ function bar() {
   const q = ST.mine.filter(x => !x.sent).length;
   $('#tb').innerHTML = `<div class="lg"><img src="${MASCOT}" alt=""><span>灵屿 2.0 试用版 <small>${VER}</small></span></div>
     <div class="seg">${['学生端', '机构端'].map(s => `<button class="${ST.side === s ? 'on' : ''}" data-side="${s}">${s}</button>`).join('')}</div>
-    <span class="fic">演示数据，全部为虚构</span><span class="sp"></span>
+    <span class="fic">虚构数据 · 模拟日期 2026/10/12</span><span class="sp"></span>
     ${ST.name ? `<span class="who">试用人：<b>${esc(ST.name)}</b><button class="lnk" data-do="rename">改</button></span>` : ''}
     <button class="btn" data-do="mine">我的意见 ${ST.mine.length}${q ? `（${q} 条待发送）` : ''}</button>
     ${ST.collect ? `<button class="btn on" data-do="stop">✓ 结束提意见</button>` : '<button class="btn pri" data-do="fb">💬 提意见</button>'}`;
@@ -26,6 +26,10 @@ function post(side, m) { const f = FR[side]; if (f && f.contentWindow) f.content
 
 /* ---------- 两端联动：比较前后两次状态，推导出事件 ---------- */
 const last = { 学生端: null, 机构端: null };
+const ivDelivered = new Set();
+function sendIvcPending() { const sc=last['学生端'],ad=last['机构端'];if(!sc || !ad || !sc.ivc || !(sc.ivc.rv>0))return;const v=sc.ivc,server=(ad.__ivc||{})[sc.core];if(server && server.id===v.id && server.ack>=v.rv || (!server || server.id!==v.id) && !v.demo)return;
+  const key=`${sc.inst}|${v.id}|${v.rv}`;if(ivDelivered.has(key))return;ivDelivered.add(key);post('机构端',{t:'ev',ev:{t:'ivcReply',core:sc.core,ivc:v}});
+}
 function syncNote(t) { if (!t) return; const n = $('#sync'); n.textContent = '已联动 · ' + t; n.classList.add('on'); clearTimeout(n._t); n._t = setTimeout(() => n.classList.remove('on'), 4200); }
 function fromStu(p, c) {
   if (!p || p.inst !== c.inst || p.scen !== c.scen) return [];
@@ -40,8 +44,8 @@ function fromStu(p, c) {
   c.done.filter(x => !p.done.includes(x)).forEach(x => ev.push({ t: 'done', core, task: x }));
   const da = p.decl || [], db = c.decl || []; db.filter(x => !da.includes(x)).forEach(x => ev.push({ t: 'decl', core, task: x, on: true })); da.filter(x => !db.includes(x)).forEach(x => ev.push({ t: 'decl', core, task: x, on: false }));
   const ia = a && a.intake, ib = b && b.intake;
-  if (ib && ['sent', 'skipped'].includes(ib.st) && (!ia || ia.st !== ib.st || ia.ver !== ib.ver)) ev.push({ t: 'intake', core, intake: ib });
-  if (c.ivc && c.ivc.rv > ((p.ivc && p.ivc.rv) || 0)) ev.push({ t: 'ivcReply', core, ivc: c.ivc });
+  if (ib && ['sent', 'skipped'].includes(ib.st) && (!ia || !same(a,b) || ia.st !== ib.st || ia.ver !== ib.ver)) ev.push({ t: 'intake', core, intake: ib });
+  if (c.ivc && (!p.ivc || c.ivc.id !== p.ivc.id || c.ivc.rv > (p.ivc.rv || 0))) ev.push({ t: 'ivcReply', core, ivc: c.ivc });
   const ra = (p.inv || []), rb = (c.inv || []); rb.forEach(v => { const o = ra.find(x => x.id === v.id); if (v.rv > ((o && o.rv) || 0)) ev.push({ t: 'invReply', core, id: v.id, r: v.r, slots: v.slots, why: v.why, ver: v.ver }); });
   return ev;
 }
@@ -59,7 +63,7 @@ function fromAdm(p, c) {
     else if (a.st === 'change' && !b) ev.push({ t: 'agree', core: k });
     else if (a.st === 'ok' && b && b.st === 'ok' && b.id === a.id && moved) ev.push({ t: 'move', core: k, date: b.date, ti: b.t }); });
   Object.entries(c.__bookReject || {}).forEach(([core, r]) => { if (!p.__bookReject || !p.__bookReject[core] || p.__bookReject[core].token !== r.token) ev.push(Object.assign({ t: 'bookRejected', core }, r)); });
-  Object.entries(c.__ivc || {}).forEach(([core,v]) => { if (v && JSON.stringify(v) !== JSON.stringify((p.__ivc || {})[core])) ev.push({ t: 'ivcSync', core, ivc: v }); });
+  Object.entries(c.__ivc || {}).forEach(([core,v]) => { if (JSON.stringify(v) !== JSON.stringify((p.__ivc || {})[core])) ev.push({ t: 'ivcSync', core, ivc: v }); });
   const ia = p.__inv || {}; Object.entries(c.__inv || {}).forEach(([k, L]) => L.forEach(v => { const o = (ia[k] || []).find(x => x.id === v.id);
     if (!o) ev.push({ t: 'invite', core: k, inv: v }); else if (o.st !== v.st || o.ver !== v.ver || o.start !== v.start) ev.push({ t: 'invUpd', core: k, inv: v }); }));
   return ev;
@@ -67,11 +71,12 @@ function fromAdm(p, c) {
 window.addEventListener('message', e => {
   const d = e.data; if (!d || !d.ly || !d.side) return;
   if (d.t === 'snap') { const p = d.init ? null : last[d.side]; last[d.side] = d.snap;
-    if (d.side === '学生端') fromStu(p, d.snap).forEach(ev => post('机构端', { t: 'ev', ev }));
+    if (d.side === '学生端') fromStu(p, d.snap).filter(ev=>ev.t!=='ivcReply').forEach(ev => post('机构端', { t: 'ev', ev }));
     else { const core = last['学生端'] && last['学生端'].core; fromAdm(p, d.snap).filter(ev => ev.core === core).forEach(ev => post('学生端', { t: 'ev', ev })); }
+    sendIvcPending();
     const iv = last['机构端'] && last['机构端'].__inv, sc = last['学生端'];
     if (iv && sc && (d.side === '学生端' ? d.init || (p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst)) : !p)) post('学生端', { t: 'ev', ev: { t: 'invSync', invs: iv[sc.core] || [] } });
-    const schedule = last['机构端'] && last['机构端'].__sched; if (schedule && (d.side === '学生端' ? d.init || p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst) : !p || JSON.stringify(p.__sched) !== JSON.stringify(schedule) || JSON.stringify(p.__allowed) !== JSON.stringify(d.snap.__allowed))) post('学生端', { t: 'ev', ev: { t: 'schedSync', slots: schedule, allowed: (last['机构端'].__allowed || {})[sc.core] } });
+    const schedule = last['机构端'] && last['机构端'].__sched; if (schedule && sc && (d.side === '学生端' ? d.init || p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst) : !p || JSON.stringify(p.__sched) !== JSON.stringify(schedule) || JSON.stringify(p.__allowed) !== JSON.stringify(d.snap.__allowed))) post('学生端', { t: 'ev', ev: { t: 'schedSync', slots: schedule, allowed: (last['机构端'].__allowed || {})[sc.core] } });
     const vc = last['机构端'] && last['机构端'].__ivc;
     if (vc && sc && (d.side === '学生端' ? d.init || (p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst)) : !p)) post('学生端', {t:'ev', ev:{t:'ivcSync', ivc:vc[sc.core] || null}});
     const cf = last['机构端'] && last['机构端'].__cfg, pc = d.side === '机构端' && p && p.__cfg;

@@ -15,7 +15,7 @@ def photos(r): return '{' + ','.join(f'{q.stem}:"' + b64(q, 'image/jpeg') + '"' 
 ajs = '\n'.join((A / f).read_text() for f in ['data.js', 'a1_core.js', 'a2_home.js', 'a3_people.js', 'a4_pages.js', 'a5_modal.js', 'a6_act.js', 'a7_assist.js', 'a8_plans.js', 'a9_sched.js', 'a10_l1.js', 'a11_clarity.js', 'a12_bridge.js', 'a13_v112.js', 'a14_v113.js', 'a15_v114.js', 'a16_talk.js', 'a17_talk_ui.js', 'a18_talk_rec.js', 'a19_talk_center.js', 'a20_talk_wire.js', 'a21_v116.js', 'a22_v117.js', 'keep.js', 'a23_v118.js', 'a24_v119.js','a25_gpt_invites.js','iv_import.js', 'shell.js', 'z_tail.js'])
 adm = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>灵屿 2.0 机构端</title><style>{(A / 'adm.css').read_text()}</style></head><body>
-<div class="demo"><b>演示工具</b><span>快速登录</span><select id="roleSel"></select><span>页面</span><select id="jump"></select><span id="zaps" style="display:flex;gap:6px"></span><span class="sp"></span><label><input type="checkbox" id="zapT"> 演示按钮</label><button class="memo-btn" id="memoBtn">📝 备忘录</button><button id="resetBtn">重置</button></div>
+<div class="demo"><b>演示工具</b><span>模拟日期：2026/10/12（可用演示按钮推进）</span><span>快速登录</span><select id="roleSel"></select><span>页面</span><select id="jump"></select><span id="zaps" style="display:flex;gap:6px"></span><span class="sp"></span><label><input type="checkbox" id="zapT"> 演示按钮</label><button class="memo-btn" id="memoBtn">📝 备忘录</button><button id="resetBtn">重置</button></div>
 <div id="app"></div><div id="drawer"></div><div id="modal"></div><div id="toast"></div><div id="memo"></div>
 {(A / 'icons.svg').read_text()}
 <script>const LY_VER="{VER}";const MASCOT="{M}";const MASCOT_IK="{IKAV}";const MASCOT_FULL="{b64(ROOT/'公共图片/mascot_full.png', 'image/png')}";const PHOTOS={photos(A)};const POSTER_BG=[{','.join(chr(34)+b64(str(q), 'image/jpeg')+chr(34) for q in sorted((ROOT/'公共图片/海报底图').glob('p*.jpg')))}];
@@ -26,7 +26,7 @@ boot();</script></body></html>'''
 # ---- 学生端
 stu = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>灵屿 2.0 学生端</title><style>{(U / 'stu.css').read_text()}</style></head><body>
-<div class="demo"><b>演示工具</b><span>场景</span><select id="scen"></select><span>页面</span><select id="jump"></select><span class="sp"></span><label><input type="checkbox" id="zapT"> 演示按钮</label><button class="memo-btn" id="memoBtn">📝 备忘录</button><button id="resetBtn">重置</button></div>
+<div class="demo"><b>演示工具</b><span>模拟日期：2026/10/12（可用演示按钮推进）</span><span>场景</span><select id="scen"></select><span>页面</span><select id="jump"></select><span class="sp"></span><label><input type="checkbox" id="zapT"> 演示按钮</label><button class="memo-btn" id="memoBtn">📝 备忘录</button><button id="resetBtn">重置</button></div>
 <div id="app"></div><div id="modal"></div><div id="toast"></div><div id="memo"></div>
 {(U / 'icons.svg').read_text()}
 {(U / 'stu.html').read_text()}

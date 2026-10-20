@@ -4,7 +4,7 @@
    卡上不写原因、等级、「普测筛出」、排队名次。演示里由「⚡ 演示 · 收到心理中心的邀约卡」触发（真实情况是老师按批确认后发）
 ===================================================================== */
 /* 截止时间都按「现在 + 2 天 18:00」算（演示里的今天跟着场景走） */
-const ivDay = n => { const d = new Date(NOW); d.setDate(d.getDate() + n); return `${d.getMonth() + 1}/${d.getDate()} 18:00`; };
+const ivDay = n => { const d = new Date(NOW); d.setDate(d.getDate() + n); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 const IVC_DUE_ = () => ivDay(2);
 const ivcDue = () => (S.ivc && S.ivc.due) || IVC_DUE_();
 function ivEntry(due) { S.ivc.st = 'entry'; S.ivc.edue = due || ivDay(2); S.page = 'book'; S.bookTab = 'time'; S.pageTop = true; }
@@ -39,7 +39,7 @@ const _msgOpen19 = ACT.msgOpen; ACT.msgOpen = function (i) { const x = S.inbox[+
 const _submit19 = ACT.bookSubmit; ACT.bookSubmit = function () { const iv = S.ivc && S.ivc.st === 'entry' && !S.resch && !S.bk;
   if (!iv) return _submit19.apply(this, arguments);
   S._ikPass = true; try { _submit19.apply(this, arguments); } finally { S._ikPass = false; }
-  if (S.bk) { S.bk.inv = true; S.bk.intake = S.ivc.ik ? Object.assign({}, S.ivc.ik) : { st: 'skipped', at: new Date(NOW), ver: 1, mode: IK_MODE }; } S.ivc.st = 'sub'; };
+  if (S.bk) { S.bk.inv = true; S.bk.intake = S.ivc.ik ? Object.assign({}, S.ivc.ik) : { st: 'skipped', at: new Date(NOW), ver: 1, mode: IK_MODE };  S.ivc.st = 'sub'; } };
 /* 选时间：入口提示 + 最下面「时间都不合适」 */
 const _book19 = PAGES.book; PAGES.book = () => { const h = _book19(); if (!S.ivc || S.ivc.st !== 'entry' || S.bk || S.resch) return h;
   const strip = `<div class="strip"><span class="ico">${I('cal')}</span><div class="grow"><b>${L('可以选和老师见面的时间了', 'You can now pick a time to meet')}</b><small>${L(`请在 ${S.ivc.edue} 前提交。下面列的都是你现在能约的时间，提交后等老师确认。`, `Please send your choice by ${S.ivc.edue}. Every time shown here is open to you; your counsellor confirms after you send it.`)}</small></div></div>`;
