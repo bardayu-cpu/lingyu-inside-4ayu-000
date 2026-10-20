@@ -3,7 +3,7 @@ const LY_SIDE = '学生端';
 const LY_CK = { A: 'lin', B: 'chen', C: 'huang', D: 'wang' };
 const lyIso = di => di == null || !DAYS[di] ? null : DAYS[di].toISOString();
 function LY_snap() { const b = S.bk, ts = S.tasks || []; S._ly = S._ly || Math.random().toString(36).slice(2);
-  return { inst: S._ly, scen: S.scen, core: LY_CK[S.scen], ivc: ivSnapshot(), bk: b ? { cid: b.cid, date: lyIso(b.di), ti: b.ti, mode: b.mode, kind: b.kind, inv: !!b.inv, ivId: b.ivId, st: b.st, moved: !!b.moved, pend: b.pend ? { type: b.pend.type, date: lyIso(b.pend.di), ti: b.pend.ti } : null, intake: b.intake && ['sent', 'skipped'].includes(b.intake.st) ? { st: b.intake.st, ver: b.intake.ver || 0, sum: b.intake.sum || null, crisis: !!b.intake.crisis, mode: b.intake.mode || IK_MODE, tk: b.intake.tk || 't1', tv: b.intake.tv || 1, adds: (b.intake.adds || []).map(a => ({ at: a.at, t: a.t })) } : null } : null,
+  return { inst: S._ly, scen: S.scen, core: LY_CK[S.scen], ivc: ivSnapshot(), bk: b ? { cid: b.cid, date: lyIso(b.di), ti: b.ti, mode: b.mode, kind: b.kind, inv: !!b.inv, ivId: b.ivId, st: b.st, moved: !!b.moved, moveAck: b.moveAck || null, pend: b.pend ? { type: b.pend.type, date: lyIso(b.pend.di), ti: b.pend.ti } : null, intake: b.intake && ['sent', 'skipped'].includes(b.intake.st) ? { st: b.intake.st, ver: b.intake.ver || 0, sum: b.intake.sum || null, crisis: !!b.intake.crisis, mode: b.intake.mode || IK_MODE, tk: b.intake.tk || 't1', tv: b.intake.tv || 1, adds: (b.intake.adds || []).map(a => ({ at: a.at, t: a.t })) } : null } : null,
     cb: !!S.callback, crisis: ts.some(t => t.crisis) || !!(S.ik && S.ik.crisis), done: ts.filter(isDone).map(t => DATA_ZH.tasks.find(d => d.id === t.id).name), decl: ts.filter(t => t.declined).map(t => DATA_ZH.tasks.find(d => d.id === t.id).name), inv: (S.invs || []).map(v => ({ id: v.id, r: v.r, rv: v.rv, slots: v.slots, why: v.why })) }; }
 function LY_ctx() { return { 端: '学生端', 场景: SCENES[S.scen].name, 页面: ((typeof JUMPS !== 'undefined' && JUMPS.find(j => j[0] === S.page)) || [0, S.page])[1].replace(/^\d+b? /, ''), 弹窗: S.modal || '', 语言: LANG === 'en' ? 'English' : '中文' }; }
 function LY_in(ev) { const b = S.bk; let msg = '';
@@ -14,8 +14,9 @@ function LY_in(ev) { const b = S.bk; let msg = '';
   else if (ev.t === 'deny' && b && b.pend) { const ty = b.pend.type === 'cancel' ? '取消' : '改期'; b.pend = null;
     addMsg('cal', [`你的${ty}申请未通过`, 'Your request was not approved'], ['原预约保持不变。', 'Your original appointment stays.'], 'mybook'); msg = `学生端收到「${ty}申请未通过」`; }
   else if (ev.t === 'move' && b) { const di = DAYS.findIndex(d => d.toDateString() === new Date(ev.date).toDateString());
-    if (di >= 0) { const old = bkWhen(b); Object.assign(b, { di, ti: ev.ti, st: '已改约', moved: true, oldWhen: old });
+    if (di >= 0) { const old = bkWhen(b); Object.assign(b, { di, ti: ev.ti, st: '已改约', moved: true, oldWhen: old, moveProposal: ev.proposal || null });
       addMsg('edit', [`${whoZ(b.cid)}调整了你的预约时间`, 'Your counsellor moved your appointment'], [`由 ${old} 改为 ${bkWhen(b)}。`, `New time: ${bkWhen(b)}.`], 'mybook'); S.modal = 'moved'; msg = '学生端收到「老师调整了预约时间」'; } }
+  else if (ev.t === 'moveConfirmed' && b) { ACT.zConfirm(); msg = '学生接受新时间后，预约已正式确认'; }
   else if (ev.t === 'bookRejected' && b && b.cid === ev.cid && lyIso(b.di) === ev.date && b.ti === ev.ti && b.st === '待确认') { S.bk = null; S.page = 'book'; S.modal = null; toast(ev.reason); msg = '预约申请未提交，请重新选时间'; }
   else if (ev.t === 'intakeViewed' && b && b.intake) { b.intake.viewed = true; msg = '学生端：预咨询摘要显示「老师已查看」'; }
   else if (ev.t === 'invSync') { const keep = new Set((ev.invs || []).map(v => v.id)); if (S.invs) { const gone = S.invs.filter(o => !keep.has(o.id)).map(o => 'inv:' + o.id); S.invs = S.invs.filter(o => keep.has(o.id)); S.inbox = S.inbox.filter(x => !gone.includes(x.link)); if (gone.includes('inv:' + S.inv) && S.modal === 'inv') S.modal = null; }   // 以机构端为准：机构端已经没有的邀约，学生端也删掉
@@ -25,3 +26,6 @@ function LY_in(ev) { const b = S.bk; let msg = '';
   else if (ev.t === 'schedSync') { S._schedSnapshot = ev.slots || []; S._slotAllowed = ev.allowed || null; msg = ''; }
   else if (ev.t === 'cfg') { IK_MODE = ev.intakeMode; if (ev.ikt) IK_CFG = ev.ikt; if (ev.ikh) IK_CFG_H = ev.ikh; msg = ''; }
   render(); return msg; }
+
+/* 老师改时间必须由学生接受后，机构端完成最后的冲突校验。 */
+const _lyMovedOk = ACT.movedOk; ACT.movedOk = function () { const proposal = S.bk && S.bk.moveProposal; _lyMovedOk.apply(this, arguments); if (proposal && S.bk) { S.bk.moveAck = proposal; S.bk.st = '待确认'; } };

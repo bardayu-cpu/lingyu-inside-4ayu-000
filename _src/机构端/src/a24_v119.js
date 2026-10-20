@@ -154,7 +154,7 @@ const bkBtnFix = h => h.replace(/>改约<\/button>/g, '>改时间</button>').rep
 const bkMan = () => { const r = S.role; let list = BOOK.slice(); if (r === 'L2') list = list.filter(b => b.cid === me());
   const F = { change: b => b.st === 'change', ok: b => b.st === 'ok', record: b => b.st === 'record', pool: b => b.st === 'pool', all: () => true };
   const subs = [['ok', '已约'], ['change', '改期 / 取消申请'], ['record', '待写记录'], ...(r === 'L3' ? [['pool', '待办池']] : []), ['all', '全部']];
-  const sub = subs.some(x => x[0] === S.tabs.bsub) ? S.tabs.bsub : 'ok', pend = list.filter(b => b.st === 'confirm');
+  const sub = subs.some(x => x[0] === S.tabs.bsub) ? S.tabs.bsub : 'ok', pend = list.filter(b => ['confirm', 'move'].includes(b.st));
   const unpub = UNPUB().filter(u => r === 'L3' || u.cid === me()).map(u => `${ST(u.cid).name} ${u.day}`).join('、');
   return (unpub ? `<div class="head n" style="padding:10px 16px">${I('cal')}<div class="grow"><b style="font-size:13.5px">请提前 2 天提交排班：${unpub} 还没有开放任何时段</b></div><button class="btn sec xs" data-act="btab" data-arg="sched">去排班</button></div>` : '') +
     `<div class="card bkpin"><h3>${I('inbox')}待确认申请（${pend.length}）<span class="sp"></span><small>学生提交的是申请，老师确认后才算约好</small></h3>${pend.length ? bkBtnFix(bookTable(pend)) : `<div class="empty"><img src="${MASCOT}" alt="">没有等你确认的申请</div>`}

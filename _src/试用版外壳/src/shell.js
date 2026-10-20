@@ -31,6 +31,7 @@ function fromStu(p, c) {
   if (!p || p.inst !== c.inst || p.scen !== c.scen) return [];
   const ev = [], a = p.bk, b = c.bk, core = c.core, same = (x, y) => x && y && x.cid === y.cid && x.date === y.date && x.ti === y.ti;
   if (b && (b.st === '待确认' || b.st === '已确认' && !b.moved && b.kind === '预咨询') && !b.pend && (!a || !same(a, b))) ev.push({ t: 'book', core, cid: b.cid, date: b.date, ti: b.ti, mode: b.mode, kind: b.kind, inv: b.inv, ivId: b.ivId });
+  if (a && b && b.moveAck && b.moveAck !== a.moveAck) ev.push({ t: 'moveAccept', core, proposal: b.moveAck });
   if (b && b.pend && !(a && a.pend)) ev.push({ t: 'req', core, type: b.pend.type, cid: b.pend.cid || b.cid, date: b.pend.date, ti: b.pend.ti });
   if (a && !b && a.st === '待确认' && !a.pend) ev.push({ t: 'cancel', core });
   if (a && b && same(a, b) && a.st === '待确认' && b.st === '已确认') ev.push({ t: 'ok', core });
@@ -47,7 +48,9 @@ function fromStu(p, c) {
 function fromAdm(p, c) {
   if (!p) return []; const ev = [];
   Object.keys(c).forEach(k => { if (k.startsWith('__')) return; const a = p[k], b = c[k]; if (!a) return; if (b && b.id === a.id && !a.iv && b.iv) ev.push({ t: 'intakeViewed', core: k }); const moved = b && (a.day !== b.day || a.t !== b.t);
-    if (a.st === 'confirm' && b && b.id === a.id && b.st === 'ok') ev.push(moved ? { t: 'move', core: k, date: b.date, ti: b.t } : { t: 'confirm', core: k });
+    if (b && b.id === a.id && b.st === 'move' && (a.st !== 'move' || a.proposal !== b.proposal)) ev.push({ t: 'move', core: k, date: b.date, ti: b.t, proposal: b.proposal });
+    else if (a.st === 'move' && b && b.id === a.id && b.st === 'ok') ev.push({ t: 'moveConfirmed', core: k });
+    else if (a.st === 'confirm' && b && b.id === a.id && b.st === 'ok') ev.push(moved ? { t: 'move', core: k, date: b.date, ti: b.t } : { t: 'confirm', core: k });
     else if (a.st === 'confirm' && !b) ev.push({ t: 'decline', core: k });
     else if (a.st === 'ok' && !b && c.__no && c.__no[k]) ev.push({ t: 'decline', core: k });
     else if (a.st === 'change' && b && b.id === a.id && b.st === 'ok') ev.push(moved ? { t: 'agree', core: k } : { t: 'deny', core: k });

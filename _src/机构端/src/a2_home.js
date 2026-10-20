@@ -141,7 +141,7 @@ function batchView(it) {
     <table class="t"><tr><th style="width:36px"></th><th>学生</th><th>初判</th><th>精筛方向</th><th>学院核实</th><th>剩余时限</th><th></th></tr>${it.map(s => `<tr class="${S.sel[s.id] ? 'sel' : ''}"><td><input type="checkbox" ${S.sel[s.id] ? 'checked' : ''} data-act="selT" data-arg="${s.id}"></td><td><b>${nm(s)}</b><small>${s.college}</small></td><td>${lvB(s.lv, s.sig)}</td><td>${tags(s.fs)}</td><td>${ST(s.follower).name}：已完成</td><td>${dueTag(leftOf(s))}</td><td><button class="btn ghost xs" data-act="open" data-arg="${s.id}">打开档案</button></td></tr>`).join('')}</table>
     <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><button class="btn pri" data-act="batchOk" ${n ? '' : 'disabled'}>确认所选 ${n} 人为 3 级，进入 14 天随访</button><span class="note">每条确认都会记入各自的跟进时间线</span></div>`;
 }
-const BST = { audit: '<span class="pill">待审核</span>', confirm: '<span class="pill w">待确认</span>', change: '<span class="pill w">改期 / 取消申请</span>', record: '<span class="pill w">待写记录</span>', pool: '<span class="pill r">待办池</span>', ok: '<span class="pill g">已确认</span>', no: '<span class="pill">已婉拒</span>', done: '<span class="pill g">已完成</span>', cancelled: '<span class="pill">已取消</span>' };
+const BST = { move: '<span class="pill w">老师提议改时间 · 等学生接受</span>', adjust: '<span class="pill r">中心调整 · 待重新安排</span>', audit: '<span class="pill">待审核</span>', confirm: '<span class="pill w">待确认</span>', change: '<span class="pill w">改期 / 取消申请</span>', record: '<span class="pill w">待写记录</span>', pool: '<span class="pill r">待办池</span>', ok: '<span class="pill g">已确认</span>', no: '<span class="pill">已婉拒</span>', done: '<span class="pill g">已完成</span>', cancelled: '<span class="pill">已取消</span>' };
 const mayBook = b => S.role === 'L3' || (S.role === 'L2' && b.cid === me());
 function bookTable(list) {
   if (!list.length) return `<div class="empty"><img src="${MASCOT}" alt="">这一项都处理完了</div>`;
@@ -149,6 +149,7 @@ function bookTable(list) {
     if (b.st === 'audit') return isL1() ? `<button class="btn pri xs" data-act="bAudit" data-arg="${b.id}">审核并同步</button>` : S.role === 'L3' ? `<button class="btn sec xs" data-act="mo" data-arg="auditor:${b.id}">改派审核人</button> <button class="btn ghost xs" data-act="bAudit" data-arg="${b.id}">代审核</button>` : '';
     if (!mayBook(b) || isL1()) return '';
     if (b.st === 'confirm') return `<button class="btn pri xs" data-act="bOk" data-arg="${b.id}">确认</button> <button class="btn sec xs" data-act="mo" data-arg="bMove:${b.id}">改约</button> <button class="btn ghost xs" data-act="mo" data-arg="bNo:${b.id}">婉拒</button>`;
+    if (b.st === 'move') return `<span class="note">等待学生接受新时间</span>`;
     if (b.st === 'change') return `<button class="btn pri xs" data-act="bAgree" data-arg="${b.id}">同意</button> <button class="btn sec xs" data-act="mo" data-arg="bDeny:${b.id}">不同意</button> <button class="btn ghost xs" data-act="bTalk" data-arg="${b.id}">先和学生聊聊</button>`;
     if (b.st === 'record') return `<button class="btn pri xs" data-act="mo" data-arg="rec:${b.id}">写记录</button>`;
     if (b.st === 'pool' && can(9)) return `<button class="btn pri xs" data-act="mo" data-arg="assignB:${b.id}">指派</button>`;
