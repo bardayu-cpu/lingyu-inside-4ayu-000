@@ -36,7 +36,27 @@ Object.assign(ACT, {
   schClose() { S.schSel = null; S.mdraft = null; },
   mslot(a) { const [k, ti] = a.split('|'), c = S.schSel.c; S.mdraft = S.mdraft || {}; if (!S.mdraft[k]) S.mdraft[k] = SCHM[c][k].slice(); S.mdraft[k][ti] = S.mdraft[k][ti] === 'open' ? 'off' : 'open'; },
   mDiscard() { S.mdraft = {}; },
-  mSave() { const c = S.schSel.c, ch = []; Object.entries(S.mdraft || {}).forEach(([k, arr]) => { arr.forEach((v, i) => { if (v !== SCHM[c][k][i]) ch.push(`${k} ${TIMES[i]} ${v === 'open' ? '开放' : '关闭'}`); }); SCHM[c][k].splice(0, TIMES.length, ...arr); const di = DAYS.findIndex(d => dkey(d) === k); if (di >= 0) SCHED[c][di] = SCHM[c][k]; });
+  mSave() { if (S.role !== 'L3' || !S.schSel) return toast('只有中心负责人可调整全组排班'); const c = S.schSel.c, ch = []; if (!schedCanPublish(c, S.mdraft || {})) return toast('改班影响已有预约或有效入口，请先补足替代安排'); Object.entries(S.mdraft || {}).forEach(([k, arr]) => { arr.forEach((v, i) => { if (v !== SCHM[c][k][i]) ch.push(`${k} ${TIMES[i]} ${v === 'open' ? '开放' : '关闭'}`); }); SCHM[c][k].splice(0, TIMES.length, ...arr); const di = DAYS.findIndex(d => dkey(d) === k); if (di >= 0) SCHED[c][di] = SCHM[c][k]; });
     notify(c, '站内 + 短信', `${ST(me()).name} 调整了你的排班：${ch.join('、')}`, null); log(`调整 ${ST(c).name} 的排班：${ch.join('、')}`, null, { cat: '预约', obj: '排班' }); S.mdraft = {}; toast(`已保存，并同步给${ST(c).name}`); },
   schRemind() { UNPUB().forEach(u => notify(u.cid, '站内 + 短信', `请提交 ${u.day} 的排班`, null)); log(`提醒提交排班：${UNPUB().map(u => ST(u.cid).name).join('、')}`, null, { cat: '预约', obj: '排班' }); toast('已提醒'); },
 });
+
+/* 停诊以具体日期、时段落库；计划性减班不能绕过已有预约和入口保护。 */
+function schedRegRange(raw) {
+  const m = String(raw || '').trim().match(/^(?:(\d{4})[-/])?(\d{1,2})[-/](\d{1,2})(?:\s*(上午|下午|晚上|全天))?$/);
+  if (!m) return null; const d = new Date(m[1] ? +m[1] : NOW.getFullYear(), +m[2] - 1, +m[3]);
+  if (d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) return null;
+  return { date: slotISO(d), day: DXL.findIndex(x => sameDay(x, d)), key: dkey(d), times: TIMES.map((_, i) => i).filter(i => !m[4] || m[4] === '全天' || (m[4] === '上午' ? +TIMES[i].slice(0,2) < 12 : m[4] === '下午' ? +TIMES[i].slice(0,2) >= 12 && +TIMES[i].slice(0,2) < 18 : +TIMES[i].slice(0,2) >= 18)) };
+}
+function schedCloseRange(cid, range, type, reason) {
+  if (!SCHM[cid] || !SCHM[cid][range.key] || !range.times.length) return false;
+  const affected = BOOK.filter(b => b.cid === cid && b.day === range.day && range.times.includes(b.t) && bookOccupies(b));
+  const closure = { cid, date: range.date, times: range.times.map(t => TIMES[t]), type, reason };
+  if (type !== '病假停诊' && (affected.length || typeof ivCanCloseSlots === 'function' && !ivCanCloseSlots(range.times.map(t => slotKey(cid, range.date, TIMES[t]))))) return false;
+  range.times.forEach(t => { SCHM[cid][range.key][t] = 'off'; if (SCHED[cid][range.day]) SCHED[cid][range.day][t] = 'off'; });
+  affected.forEach(b => { b.adjustFrom = { day: b.day, t: b.t, st: b.st }; b.st = 'adjust'; b.adjustReason = reason || '老师临时有事'; b.req = null; bookChanged(b, 'adjust'); notify('stu', '站内 + 短信', '原定的时间因老师临时有事取消了，老师会尽快重新和你约。', b.id); });
+  if (typeof ivScheduleChanged === 'function') ivScheduleChanged(closure);
+  return { affected: affected.length };
+}
+
+function schedCanPublish(cid, rows) { const closing = []; for (const [key, arr] of Object.entries(rows)) { const [m,d] = key.split('/').map(Number), date = new Date(NOW.getFullYear(),m-1,d), day = DXL.findIndex(x=>sameDay(x,date)); for (let t=0;t<arr.length;t++) { if (arr[t] === SCHM[cid][key][t]) continue; if (day >= 0 && slotConflict(cid,day,t)) return false; if (arr[t] === 'off') closing.push(slotKey(cid,date,TIMES[t])); } } return typeof ivCanCloseSlots !== 'function' || ivCanCloseSlots(closing); }

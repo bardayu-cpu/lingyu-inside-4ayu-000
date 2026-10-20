@@ -16,6 +16,8 @@ function LY_in(ev) { const b = S.bk; let msg = '';
   else if (ev.t === 'move' && b) { const di = DAYS.findIndex(d => d.toDateString() === new Date(ev.date).toDateString());
     if (di >= 0) { const old = bkWhen(b); Object.assign(b, { di, ti: ev.ti, st: '已改约', moved: true, oldWhen: old, moveProposal: ev.proposal || null });
       addMsg('edit', [`${whoZ(b.cid)}调整了你的预约时间`, 'Your counsellor moved your appointment'], [`由 ${old} 改为 ${bkWhen(b)}。`, `New time: ${bkWhen(b)}.`], 'mybook'); S.modal = 'moved'; msg = '学生端收到「老师调整了预约时间」'; } }
+  else if (ev.t === 'centerAdjust' && b) { b.st = '中心调整 · 待重新安排'; b.centerAdjusted = true; b.pend = null; if (S.ivc && b.inv) S.ivc.st = 'adjust'; const body = '原定的时间因老师临时有事取消了，老师会尽快重新和你约。'; addMsg('cal', ['中心正在重新安排时间', 'UCC is arranging a new time'], [body, 'Your original time was cancelled because your counsellor is temporarily unavailable. UCC will contact you soon to arrange another time.'], 'mybook', true); S.info = { ico: 'cal', title: L('中心正在重新安排时间', 'UCC is arranging a new time'), body: esc(body), btn: ['mybook', L('查看预约', 'View appointment')] }; S.modal = 'info'; msg = '学生已收到中心调整通知，不计学生改期或取消次数'; }
+  else if (ev.t === 'rearrange' && b) { const di = DAYS.findIndex(d => d.toDateString() === new Date(ev.date).toDateString()); if (di >= 0) { Object.assign(b, { cid: ev.cid, di, ti: ev.ti, st: '待确认', centerAdjusted: false, moved: true }); addMsg('cal', ['中心已重新安排，等待老师确认', 'UCC has arranged a new time'], [bkWhen(b), bkWhen(b)], 'mybook'); } }
   else if (ev.t === 'moveConfirmed' && b) { ACT.zConfirm(); msg = '学生接受新时间后，预约已正式确认'; }
   else if (ev.t === 'bookRejected' && b && b.cid === ev.cid && lyIso(b.di) === ev.date && b.ti === ev.ti && b.st === '待确认') { S.bk = null; S.page = 'book'; S.modal = null; toast(ev.reason); msg = '预约申请未提交，请重新选时间'; }
   else if (ev.t === 'intakeViewed' && b && b.intake) { b.intake.viewed = true; msg = '学生端：预咨询摘要显示「老师已查看」'; }
@@ -29,3 +31,5 @@ function LY_in(ev) { const b = S.bk; let msg = '';
 
 /* 老师改时间必须由学生接受后，机构端完成最后的冲突校验。 */
 const _lyMovedOk = ACT.movedOk; ACT.movedOk = function () { const proposal = S.bk && S.bk.moveProposal; _lyMovedOk.apply(this, arguments); if (proposal && S.bk) { S.bk.moveAck = proposal; S.bk.st = '待确认'; } };
+
+const _lyMyBook = PAGES.mybook; PAGES.mybook = function () { if (!(S.bk && S.bk.centerAdjusted)) return _lyMyBook(); return `<div class="bk"><div class="bh"><span class="ico">${I('cal')}</span><b>${L('中心调整 · 待重新安排', 'UCC is arranging a new time')}</b></div><div class="bb"><p>${L('原定的时间因老师临时有事取消了，老师会尽快重新和你约。', 'Your counsellor is temporarily unavailable. UCC will contact you soon to arrange another time.')}</p><p class="note">${L('这次变更不占用你的改期或取消次数，预咨询内容会保留。', 'This does not count toward your changes or cancellations. Your intake summary is retained.')}</p></div></div>`; };

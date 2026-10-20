@@ -157,14 +157,14 @@ const ACT = {
     else if (curLv(s) >= 4 && lv < curLv(s)) move(s, 'L3', 'down', { downTo: lv, downBy: me(), downWhy: `咨询后建议：${F.note}`, src: `${ST(me()).name} 咨询后建议降为 ${lv} 级`, owner: me() });
     else followUp(s, lv, { owner: me() });
     S.mo = null; toast(F.next === '结束并归档' ? '记录已保存，学生已归档' : '记录已保存'); },
-  assignBOk(id) { const b = BOOK.find(x => x.id === id), w = W[S.form.who]; if (!w) return toast('请选择咨询师'); if (!S.form.slot) return toast('请选择时段'); const [d, t] = S.form.slot.split('-').map(Number); if (!canTakeSlot(w, d, t, b.id, b.sid)) return toast('时段已被占用或关闭，请重新选择');
+  assignBOk(id) { const b = BOOK.find(x => x.id === id); if (!b || S.role !== 'L3' || !['pool', 'adjust'].includes(b.st)) return toast('只有中心负责人可指派待办预约'); const w = W[S.form.who]; if (!w) return toast('请选择咨询师'); if (!S.form.slot) return toast('请选择时段'); const [d, t] = S.form.slot.split('-').map(Number); if (!canTakeSlot(w, d, t, b.id, b.sid)) return toast('时段已被占用或关闭，请重新选择');
     setSlot(b.cid, b.day, b.t, 'open'); b.cid = w; b.day = d; b.t = t; setSlot(w, d, t, 'bk'); b.st = 'confirm'; b.at = new Date(NOW); b.src = '待办池指派';
     log(`待办池指派给 ${S.form.who}，${slotTxt(b)}`, SU(b.sid), { cat: '预约', k: 'book' }); notify(w, '站内 + 短信', '待办池指派给你 1 个预约', b.id); S.mo = null; toast('已指派；排班同步更新'); },
   slot(a) { const [c, d, t] = a.split(':'); if (!S.draft[c]) S.draft[c] = SCHED[c].map(r => r.slice()); S.draft[c][d][t] = S.draft[c][d][t] === 'open' ? 'off' : 'open'; },
   discard() { delete S.draft[S.role === 'L2' ? me() : S.schedC]; },
   pre(c) { if (S.role === 'L2' && c !== me()) return; STAFF[c].pre = !STAFF[c].pre; log(`${ST(c).name} 接待预咨询：${STAFF[c].pre ? '关 → 开' : '开 → 关'}`, null, { cat: '配置', obj: '排班' }); },
   copyWeek() { const c = S.role === 'L2' ? me() : S.schedC; log(`复制 ${ST(c).name} 本周排班到下周（草稿）`, null, { cat: '预约', obj: '排班' }); toast('已复制到 10/19–10/23，作为草稿待发布'); },
-  publish() { const c = S.role === 'L2' ? me() : S.schedC, d = S.draft[c]; const n = d ? d.flat().filter((v, i) => v !== SCHED[c].flat()[i]).length : 0; if (d) DAYS.forEach((day, i) => d[i].forEach((v, t) => setSlot(c, i, t, v))); delete S.draft[c];
+  publish() { const c = S.role === 'L2' ? me() : S.schedC, d = S.draft[c]; const n = d ? d.flat().filter((v, i) => v !== SCHED[c].flat()[i]).length : 0; if (S.role !== 'L3' && !(S.role === 'L2' && c === me())) return toast('无权修改这位老师的排班'); if (d && !schedCanPublish(c, Object.fromEntries(DAYS.map((day,i) => [dkey(day),d[i]])))) return toast('改班影响已有预约或有效入口，请先补足替代安排'); if (d) DAYS.forEach((day, i) => d[i].forEach((v, t) => setSlot(c, i, t, v))); delete S.draft[c];
     log(`提交排班：${ST(c).name} ${dayLbl(0)}–${dayLbl(4)}，改动 ${n} 处`, null, { cat: '预约', obj: '排班' }); toast('已提交，学生端可以看到新时段'); },
   // 普测
   waveOk(id) { const w = TASKS[0].waves.find(x => x.n == id), c = capacity(w); if (!c.ok && !S.form.note) return toast('产能不足时必须写明理由');

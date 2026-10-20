@@ -48,7 +48,9 @@ function fromStu(p, c) {
 function fromAdm(p, c) {
   if (!p) return []; const ev = [];
   Object.keys(c).forEach(k => { if (k.startsWith('__')) return; const a = p[k], b = c[k]; if (!a) return; if (b && b.id === a.id && !a.iv && b.iv) ev.push({ t: 'intakeViewed', core: k }); const moved = b && (a.day !== b.day || a.t !== b.t);
-    if (b && b.id === a.id && b.st === 'move' && (a.st !== 'move' || a.proposal !== b.proposal)) ev.push({ t: 'move', core: k, date: b.date, ti: b.t, proposal: b.proposal });
+    if (b && b.id === a.id && b.st === 'adjust' && a.st !== 'adjust') ev.push({ t: 'centerAdjust', core: k, reason: b.adjustReason });
+    else if (a.st === 'adjust' && b && b.id === a.id && b.st === 'confirm') ev.push({ t: 'rearrange', core: k, cid: b.cid, date: b.date, ti: b.t });
+    else if (b && b.id === a.id && b.st === 'move' && (a.st !== 'move' || a.proposal !== b.proposal)) ev.push({ t: 'move', core: k, date: b.date, ti: b.t, proposal: b.proposal });
     else if (a.st === 'move' && b && b.id === a.id && b.st === 'ok') ev.push({ t: 'moveConfirmed', core: k });
     else if (a.st === 'confirm' && b && b.id === a.id && b.st === 'ok') ev.push(moved ? { t: 'move', core: k, date: b.date, ti: b.t } : { t: 'confirm', core: k });
     else if (a.st === 'confirm' && !b) ev.push(Object.assign({ t: 'decline', core: k }, (c.__bookResult || {})[k] || {}));

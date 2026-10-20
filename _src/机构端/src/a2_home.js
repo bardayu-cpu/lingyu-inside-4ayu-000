@@ -152,7 +152,7 @@ function bookTable(list) {
     if (b.st === 'move') return `<span class="note">等待学生接受新时间</span>`;
     if (b.st === 'change') return `<button class="btn pri xs" data-act="bAgree" data-arg="${b.id}">同意</button> <button class="btn sec xs" data-act="mo" data-arg="bDeny:${b.id}">不同意</button> <button class="btn ghost xs" data-act="bTalk" data-arg="${b.id}">先和学生聊聊</button>`;
     if (b.st === 'record') return `<button class="btn pri xs" data-act="mo" data-arg="rec:${b.id}">写记录</button>`;
-    if (b.st === 'pool' && can(9)) return `<button class="btn pri xs" data-act="mo" data-arg="assignB:${b.id}">指派</button>`;
+    if (['pool', 'adjust'].includes(b.st) && can(9)) return `<button class="btn pri xs" data-act="mo" data-arg="assignB:${b.id}">指派</button>`;
     if (b.st === 'ok' && b.fresh) return `<button class="btn pri xs" data-act="bSeen" data-arg="${b.id}">知道了</button> <button class="btn sec xs" data-act="mo" data-arg="bMove:${b.id}">改约</button> <button class="btn ghost xs" data-act="mo" data-arg="bNo:${b.id}">婉拒</button>`;
     if (b.st === 'ok') return `<button class="btn ghost xs" data-act="mo" data-arg="bMove:${b.id}">改约</button>`;
     return '';

@@ -152,8 +152,8 @@ const bkBtnFix = h => h.replace(/>改约<\/button>/g, '>改时间</button>').rep
 
 /* 人工咨询：最上面是待确认的申请，下面是已约、改期取消、待写记录、待办池 */
 const bkMan = () => { const r = S.role; let list = BOOK.slice(); if (r === 'L2') list = list.filter(b => b.cid === me());
-  const F = { change: b => b.st === 'change', ok: b => b.st === 'ok', record: b => b.st === 'record', pool: b => b.st === 'pool', all: () => true };
-  const subs = [['ok', '已约'], ['change', '改期 / 取消申请'], ['record', '待写记录'], ...(r === 'L3' ? [['pool', '待办池']] : []), ['all', '全部']];
+  const F = { adjust: b => b.st === 'adjust', change: b => b.st === 'change', ok: b => b.st === 'ok', record: b => b.st === 'record', pool: b => b.st === 'pool', all: () => true };
+  const subs = [['ok', '已约'], ['adjust', '中心调整 · 待重新安排'], ['change', '改期 / 取消申请'], ['record', '待写记录'], ...(r === 'L3' ? [['pool', '待办池']] : []), ['all', '全部']];
   const sub = subs.some(x => x[0] === S.tabs.bsub) ? S.tabs.bsub : 'ok', pend = list.filter(b => ['confirm', 'move'].includes(b.st));
   const unpub = UNPUB().filter(u => r === 'L3' || u.cid === me()).map(u => `${ST(u.cid).name} ${u.day}`).join('、');
   return (unpub ? `<div class="head n" style="padding:10px 16px">${I('cal')}<div class="grow"><b style="font-size:13.5px">请提前 2 天提交排班：${unpub} 还没有开放任何时段</b></div><button class="btn sec xs" data-act="btab" data-arg="sched">去排班</button></div>` : '') +
@@ -252,9 +252,13 @@ Object.assign(ACT, {
       if (B.list.some(x => x.sid === s.id)) return res.has.push(`${nm(s)}：已在批次里`); if (activeBook(s)) return res.has.push(`${nm(s)}：已有在途预约`);
       B.list.push({ sid: s.id, lv: curLv(s), st: 'new', resp: ivResp(s) }); res.in.push(nm(s)); });
     if (!ids.length) return toast('请勾选学生或粘贴学号'); log(`主动邀约 · 加学生：进入批次 ${res.in.length} · 对不上 ${res.bad.length} · 不走预约队列 ${res.skip.length} · 已有安排 ${res.has.length}`, null, { cat: '预约', obj: '主动邀约' }); S.ivRes = res; S.mo = 'ivRes:'; },
-  schedRegGo() { const F = S.form; if (!F.rgc || !F.rgt || !(F.rgd || '').trim()) return toast('请选老师、类型，写日期'); RULES.schedLog = RULES.schedLog || [];
-    RULES.schedLog.push({ at: new Date(NOW), cid: F.rgc, type: F.rgt, day: F.rgd.trim(), why: (F.rgw || '').trim() }); log(`排班 · ${ST(F.rgc).name} ${F.rgt}：${F.rgd.trim()}`, null, { cat: '预约', obj: '排班' });
-    if (me() !== 'c5') notify('c5', '站内', `${ST(F.rgc).name} 登记了${F.rgt}：${F.rgd.trim()}`, null); S.mo = null; toast('已登记，中心负责人会收到通知'); },
+  schedRegGo() { const F = S.form; if (!F.rgc || !F.rgt || !(F.rgd || '').trim()) return toast('请选老师、类型，写日期');
+    if (S.role !== 'L3' && !(S.role === 'L2' && F.rgc === me())) return toast('只能登记本人排班');
+    const range = schedRegRange(F.rgd); if (!range) return toast('请输入有效日期，例如 2026-10-23 或 10/23 下午');
+    let result = null; if (F.rgt !== '改班') { result = schedCloseRange(F.rgc, range, F.rgt, (F.rgw || '').trim()); if (!result) return toast('这个日期没有可关时段，或仍影响已有预约 / 有效入口；请先补足替代安排'); }
+    RULES.schedLog = RULES.schedLog || []; RULES.schedLog.push({ at: new Date(NOW), cid: F.rgc, type: F.rgt, day: F.rgd.trim(), date: range.date, times: range.times.map(t => TIMES[t]), affected: result ? result.affected : 0, why: (F.rgw || '').trim() });
+    log(`排班 · ${ST(F.rgc).name} ${F.rgt}：${F.rgd.trim()}${result ? `；关闭 ${range.times.length} 个时段，${result.affected} 个预约进入中心调整` : ''}`, null, { cat: '预约', obj: '排班' });
+    notify('c5', '站内 + 短信', `${ST(F.rgc).name} 登记了${F.rgt}：${F.rgd.trim()}${result ? `；${result.affected} 个预约待重新安排` : ''}`, null); S.mo = null; toast(result ? '已关闭时段，受影响预约进入中心调整，并已通知中心负责人' : '已登记，中心负责人会收到通知'); },
   ivPickT(id) { const L = S.form.ivPick = S.form.ivPick || []; const i = L.indexOf(id); if (i >= 0) L.splice(i, 1); else L.push(id); } });
 const _md19 = modal; modal = function () { const [k, id] = (S.mo || '').split(':'), F = S.form;
   if (k === 'ivSend') { const L = ivMine().filter(x => x.st === 'new' && (id === 'all' || (+id >= 4 ? x.lv >= 4 : x.lv === +id))), P = poolN(), q = Math.max(0, P.can - ivMine().filter(x => ['entry', 'sub', 'ok'].includes(x.st)).length);
