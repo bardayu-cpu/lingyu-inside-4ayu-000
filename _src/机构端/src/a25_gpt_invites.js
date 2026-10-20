@@ -21,7 +21,7 @@ function ivPool() {
   slots.forEach(s => { if (new Date(`${s.date}T${s.time}:00`) - NOW < 72 * H && !held.has(s.key)) map[s.key] = 'norm'; });
   const inv = slots.filter(s => map[s.key] === 'inv').length, hold = Math.min(P.hold, Math.max(0, inv - held.size));
   P.R = Math.max(0, slots.length - held.size); P.FIX = held.size + schedSlots().filter(s => s.st === 'bk' && new Date(`${s.date}T${s.time}:00`) >= NOW && new Date(`${s.date}T${s.time}:00`) - NOW <= 30*24*H).length;
-  return { inv, norm: slots.length - inv, hold, can: Math.max(0, inv - hold), slots, invite: slots.filter(s => map[s.key] === 'inv').slice(0, inv - hold) };
+  return { inv, norm: slots.length - inv, hold, can: Math.max(0, inv - hold), slots, invite: [...slots.filter(s => held.has(s.key)), ...slots.filter(s => map[s.key] === 'inv' && !held.has(s.key)).slice(0, Math.max(0, inv - held.size - hold))] };
 }
 function ivFits(x, slot, until) {
   const s = SU(x.sid), cid = x.allowedCid || s.owner;
@@ -36,6 +36,7 @@ function ivMatch(entries, slots) {
 function ivAllocate() {
   const B = ivIdentity(), P = ivPool(), entries = ivEntries();
   entries.forEach(x => { if (!x.entryUntil) x.entryUntil = new Date(+NOW+48*H).toISOString(); });
+  const existing = ivMatch(entries,P.invite); if (existing) entries.forEach(x=>{ x.holdKey=existing[x.id]; });
   const sorted = B.list.filter(x => x.st === 'queue' && !x.demoQueue).sort((a,b) => (b.lv >= 4) - (a.lv >= 4) || (b.priorityReturn || 0) - (a.priorityReturn || 0) || new Date(SU(a.sid).done || a.readyAt || NOW) - new Date(SU(b.sid).done || b.readyAt || NOW));
   for (const x of sorted) { const trial = Object.assign({},x,{entryUntil:new Date(+NOW+48*H).toISOString()});
     const matched = ivMatch([...entries,trial],P.invite); if (!matched) break;
@@ -43,8 +44,8 @@ function ivAllocate() {
     entries.forEach(e => { e.holdKey = matched[e.id]; });
   }
 }
-function ivSlotAllowed(sid,cid,date,time,excludeBid) {
-  const P = ivPool(), key = `${cid}|${date}|${time}`, own = ivEntries().find(x => x.sid === sid), b = excludeBid && BOOK.find(b => b.id === excludeBid), existing = b && b.cid === cid && slotISO(DD(b.day)) === date && TIMES[b.t] === time;
+function ivSlotAllowed(sid,cid,date,time,excludeBid,sharedPool) {
+  const P = sharedPool || ivPool(), key = `${cid}|${date}|${time}`, own = ivEntries().find(x => x.sid === sid), b = excludeBid && BOOK.find(b => b.id === excludeBid), existing = b && b.cid === cid && slotISO(DD(b.day)) === date && TIMES[b.t] === time;
   if (existing) return true;
   const slot = P.slots.find(s => s.key === key); if (!slot) return false;
   if (own || b && b.ivId) { const x = own || ivIdentity().list.find(x => x.id === b.ivId); if (!x || RULES.slotPool[key] !== 'inv' || (SU(x.sid).owner && SU(x.sid).owner !== cid)) return false; }
@@ -65,13 +66,13 @@ function ivScheduleChanged(change) {
 function ivBookChanged(b,action) {
   const x = ivIdentity().list.find(x => x.id === b.ivId || x.bid === b.id); if (!x) { if (['cancel','decline','confirm'].includes(action)) ivAllocate(); return; }
   x.bid=b.id;
-  if (action==='confirm' || action==='accept') { x.st='ok'; delete x.holdKey; }
+  if (action==='confirm' || action==='accept' || action==='moveAccept') { x.st='ok'; delete x.holdKey; }
   else if (action==='submit' || action==='move') { x.st='sub'; delete x.holdKey; }
   else if (action==='decline' || action==='cancel') { x.st='entry'; x.note=b.declineNote || ''; }
   else if (action==='adjust') { x.st='adjust'; x.note='老师临时停诊，中心会重新安排'; delete x.holdKey; }
   ivBump(x); ivAllocate();
 }
-function ivAllowedPublic() { const out={}; Object.entries(LY_CORE()).forEach(([k,s]) => { out[k]=ivPool().slots.filter(x=>ivSlotAllowed(s.id,x.cid,x.date,x.time)).map(x=>x.key); }); return out; }
+function ivAllowedPublic() { const out={}, P=ivPool(); Object.entries(LY_CORE()).forEach(([k,s]) => { out[k]=P.slots.filter(x=>ivSlotAllowed(s.id,x.cid,x.date,x.time,null,P)).map(x=>x.key); }); return out; }
 
 function ivPublic() {
   const B = ivIdentity(), out = {};

@@ -13,7 +13,7 @@ with sync_playwright() as p:
  assert page.evaluate("ivb().list.every(x=>x.st==='entry') && new Set(ivb().list.map(x=>x.holdKey)).size===2"),'distinct compatible holds'
  assert page.evaluate("!ivSlotAllowed(CORE.huang.id,'c1','2026-10-16','14:00') && ivSlotAllowed(CORE.huang.id,'c2','2026-10-16','14:00')"),'unrestricted student cannot take restricted student only slot'
  assert page.evaluate("!ivCanCloseSlots(['c1|2026-10-16|14:00'])"),'planned close protects entry'
- page.evaluate("RULES.pool.inv=0;ivPool()")
+ page.evaluate("RULES.pool.hold=100;ivPool()"); assert page.evaluate("ivEntries().every(x=>ivPool().invite.some(s=>s.key===x.holdKey))"),'hold budget cannot hide protected keys'; page.evaluate("RULES.pool.hold=0;RULES.pool.inv=0;ivPool()")
  assert page.evaluate("ivPool().inv===2 && ivPool().norm===0"),'ratio cannot remove protected slots'
  page.evaluate("ivb().list.push({id:'three',sid:CORE.wang.id,st:'queue',lv:3,resp:'c1'});ivAllocate()")
  assert page.evaluate("ivb().list[2].st==='queue'"),'capacity exhaustion queues'
@@ -24,4 +24,4 @@ with sync_playwright() as p:
  assert page.evaluate("ivPool().slots.length===2 && RULES.pool.R===ivPool().slots.length-ivEntries().filter(x=>x.holdKey).length"),'numbers reflect actual schedule'
  assert not errors,errors
  b.close()
-print('gpt_capacity: 8 passed; 0 page errors')
+print('gpt_capacity: 9 passed; 0 page errors')
