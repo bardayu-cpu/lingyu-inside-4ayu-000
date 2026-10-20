@@ -30,6 +30,7 @@ with sync_playwright() as p:
     browser = launch_browser(p)
     context = browser.new_context(viewport={'width': 1440, 'height': 1000})
     context.route('https://**/*', lambda route: route.fulfill(status=200, body='{}', content_type='application/json'))
+    context.add_init_script("localStorage.setItem('ly_keep_force','1')")
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
@@ -57,6 +58,21 @@ with sync_playwright() as p:
         page.locator('[data-iv-file]').set_input_files({'name': 'broken.xlsx', 'mimeType': 'application/octet-stream', 'buffer': b'not an Excel file'})
         page.wait_for_function('S.form.ivFileError && !S.form.ivFileBusy')
         chk('XLSX' in page.locator('#modal').inner_text() and E('S.form.ivFile') is None, 'Q10 invalid file gives a visible error and no candidate import')
+
+    if 'all' in wanted or 'R13' in wanted:
+        E("mk({name:'四堆新增甲',sid:'GPT1001A',lv:4,stage:'L2',queue:'batch'});mk({name:'四堆危机乙',sid:'GPT1002A',lv:5,stage:'L2',queue:'batch'});CRISES.push({id:'gptCrisis',sid:STU.find(x=>x.sid==='GPT1002A').id,st:'new'});render()")
+        E("ACT.mo('ivAdd:');S.form.ivt='paste';S.form.ivIds='GPT1001A GPT1001A UNKNOWN_ID GPT1002A '+SU(ivb().list[0].sid).sid;render()")
+        page.locator('[data-act=ivAddGo]').click()
+        res = E('S.ivRes')
+        chk([len(res[k]) for k in ['in','bad','skip','has']] == [1,2,1,1], 'R13 four categories include duplicate and unknown IDs')
+        chk(E('ivb().checks.slice(-1)[0].piles.bad.length') == 2 and E("ivb().piles.bad.some(x=>x.id==='UNKNOWN_ID')"), 'R13 check results are stored on batch')
+        E('ACT.moClose();render()')
+        page.locator('[data-act=mo][data-arg="ivChecks:"]').click()
+        chk(all(v in page.locator('#modal').inner_text() for v in ['四堆新增甲','四堆危机乙','UNKNOWN_ID','本次重复学号']), 'R13 stored classification details are reachable from batch')
+        page.reload()
+        E("enter('c5','L3');go('booking');S.tabs.booking='inv';render()")
+        page.locator('[data-act=mo][data-arg="ivChecks:"]').click()
+        chk('UNKNOWN_ID' in page.locator('#modal').inner_text() and '四堆新增甲' in page.locator('#modal').inner_text(), 'R13 batch and classification details survive reload')
 
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()

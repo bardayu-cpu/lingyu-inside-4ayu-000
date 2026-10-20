@@ -167,7 +167,7 @@ const bkInv = () => { const B = ivb(), L = ivMine(), c = ivCnt(L), P = poolN(), 
   const f = S.f.ivst || '', rows = L.filter(x => !f || ivMatches(x, f)), nNew = L.filter(x => x.st === 'new').length, tiers = [...new Set(L.filter(x => x.st === 'new').map(x => x.lv >= 4 ? 4 : x.lv))];
   return `<p class="intro">${I('info', 's')}<span>普测命中主动邀约等级（${RULES.pool.ivLv} 级及以上，在「号池配置」里设）的学生，由老师按批确认后发<b>邀约卡</b>。学生接受后马上做 AI 预咨询（不占号），做完按顺序自动拿到<b>人工预约入口</b>，号不够就排队。邀约卡和入口的 24 小时提醒按规则自动发；普测结束后系统不会主动给任何学生发卡。</span></p>
     <div class="card"><h3>${I('users')}${B.name}<span class="sp"></span><small>${fmt(B.at)} 由 ${ST(B.by).name} 建 · ${S.role === 'L3' ? '全部学生' : '你负责的学生'}</small>${S.role === 'L3' ? `<button class="btn sec xs" data-act="mo" data-arg="ivAdd:">${I('plus', 's')}加学生</button>` : ''}</h3>
-      <div class="kv"><span>核对结果</span><b>进入批次 ${B.list.length} 人 · 对不上 ${B.piles.bad.length} · 不走预约队列 ${B.piles.skip.length}（${B.piles.skip.map(x => `${nm(SU(x.sid))}：${x.why}`).join('；') || '—'}） · 已有安排 ${B.piles.has.length}${B.piles.has.length ? `（${B.piles.has.map(x => nm(SU(x.sid))).join('、')}，已有在途预约）` : ''}</b></div>
+      <div class="kv"><span>核对结果${B.checks && B.checks.length ? '<br><button class="lnk" data-act="mo" data-arg="ivChecks:">查看历次核对</button>' : ''}</span><b>进入批次 ${B.list.length} 人 · 对不上 ${B.piles.bad.length} · 不走预约队列 ${B.piles.skip.length}（${B.piles.skip.map(x => `${nm(SU(x.sid))}：${x.why}`).join('；') || '—'}） · 已有安排 ${B.piles.has.length}${B.piles.has.length ? `（${B.piles.has.map(x => nm(SU(x.sid))).join('、')}，已有在途预约）` : ''}</b></div>
       <div class="grid g4" style="margin:12px 0">${IV_KPI.map(([k, n]) => `<button class="kpi ${f === k ? 'on' : ''}" data-act="ivF" data-arg="${k}"><small>${n}</small><b>${c[k]}</b><span>${k === 'sent' ? `累计发出 · 本批共 ${L.length} 人` : k === 'acc' ? `累计接受率 ${c.sent ? Math.round(c.acc / c.sent * 100) : 0}%` : k === 'ok' ? `成功率 ${c.ok + c.sub + c.entry ? Math.round(c.ok / (c.ok + c.sub + c.entry) * 100) : 0}%` : '点这里筛选'}</span></button>`).join('')}</div>
       <div class="dbox ${gap ? 'warn' : ''}"><b>${I('alert', 's')}容量缺口</b><p style="margin:4px 0 0">本批 ${B.list.length} 人，已确认 ${c.ok} 人、不参加 ${c.no} 人；本窗口尚可承接 ${P.can + B.list.filter(x => x.st === 'sub').length} 人（含申请中为学生保留的时段）${gap ? `，<b>至少 ${gap} 人这一窗口约不上</b>。缺口由中心负责人处理：分阶段排到下一个 30 天、加排班、转辅导员谈心或团体辅导，或继续等（负责老师按等待期限复核）。` : '，够用。'}</p>
         <div style="margin-top:8px;display:flex;gap:8px">${S.role === 'L3' && gap ? `<button class="btn sec xs" data-act="btab" data-arg="pool">去号池配置调额度</button>` : ''}<button class="btn sec xs" data-act="mo" data-arg="ivApp:">申请额度</button></div></div></div>
@@ -246,12 +246,19 @@ Object.assign(ACT, {
     RULES.pool.apps.push({ id: 'ap' + (RULES.pool.apps.length + 1), col: F.apc, n, why: F.apw.trim(), by: me(), at: new Date(NOW), st: 'wait' }); log(`主动邀约 · 申请额度：${F.apc} ${n} 个`, null, { cat: '预约', obj: '号池' }); notify('c5', '站内', `${ST(me()).name} 申请 ${F.apc} 的邀约额度 ${n} 个`, null); S.mo = null; toast('已提交，中心负责人会在「号池配置」里处理'); },
   ivSendGo(t) { const L = ivMine().filter(x => x.st === 'new' && (t === 'all' || (+t >= 4 ? x.lv >= 4 : x.lv === +t))); if (!L.length) return; L.forEach(x => { x.st = 'sent'; x.at = new Date(NOW); x.due = ivDue(2); });
     log(`主动邀约 · 发邀约卡 ${L.length} 人（${t === 'all' ? '全部' : +t >= 4 ? '4 级及以上' : `${t} 级`}）`, null, { cat: '预约', obj: '主动邀约' }); S.mo = null; toast(`已发给 ${L.length} 位学生，24 小时后自动提醒一次`); },
-  ivAddGo() { if (S.role !== 'L3') return toast('只有中心负责人能添加学生'); const B = ivb(), F = S.form; if (F.ivFileBusy) return toast('表格还在读取，请稍后'); const ids = [...new Set([...(F.ivPick || []), ...(F.ivIds || '').split(/[\s,，、]+/).filter(Boolean), ...ivFileIds(F)])], res = { in: [], bad: [], skip: [], has: [] };
-    ids.forEach(id => { const s = STU.find(x => x.id === id || x.sid === id); if (!s) return res.bad.push(`${id}：不在名册`);
-      if (CRISES.some(k => k.sid === s.id && k.st !== 'closed')) return res.skip.push(`${nm(s)}：危机中`);
-      if (B.list.some(x => x.sid === s.id)) return res.has.push(`${nm(s)}：已在批次里`); if (activeBook(s)) return res.has.push(`${nm(s)}：已有在途预约`);
-      B.list.push({ sid: s.id, lv: curLv(s), st: 'new', resp: ivResp(s) }); res.in.push(nm(s)); });
-    if (!ids.length) return toast('请勾选学生、粘贴学号，或导入表格并核对学号列'); log(`主动邀约 · 加学生：进入批次 ${res.in.length} · 对不上 ${res.bad.length} · 不走预约队列 ${res.skip.length} · 已有安排 ${res.has.length}`, null, { cat: '预约', obj: '主动邀约' }); S.ivRes = res; S.mo = 'ivRes:'; },
+  ivAddGo() { if (S.role !== 'L3') return toast('只有中心负责人能添加学生'); const B = ivb(), F = S.form; if (F.ivFileBusy) return toast('表格还在读取，请稍后');
+    const ids = [...(F.ivPick || []), ...(F.ivIds || '').split(/[\s,，、]+/).filter(Boolean), ...ivFileIds(F)], seen = new Set(), rows = { in: [], bad: [], skip: [], has: [] };
+    if (!ids.length) return toast('请勾选学生、粘贴学号，或导入表格并核对学号列');
+    const add = (kind, id, s, why) => rows[kind].push({ id, sid: s ? s.id : null, why });
+    ids.forEach(id => { const s = STU.find(x => x.id === id || x.sid === id); if (!s) return add('bad', id, null, '不在名册');
+      if (seen.has(s.id)) return add('bad', id, s, '本次重复学号'); seen.add(s.id);
+      if (CRISES.some(k => k.sid === s.id && k.st !== 'closed')) return add('skip', id, s, '危机中，由危机流程接手');
+      if (B.list.some(x => x.sid === s.id)) return add('has', id, s, '已在本批次'); if (activeBook(s)) return add('has', id, s, '已有在途预约，由负责老师确认是否承接本轮访谈');
+      B.list.push({ sid: s.id, lv: curLv(s), st: 'new', resp: ivResp(s) }); add('in', id, s, '进入批次'); });
+    B.piles = B.piles || {}; Object.keys(rows).forEach(kind => { B.piles[kind] = B.piles[kind] || []; rows[kind].forEach(row => { if (!B.piles[kind].some(old => (old.sid || old.id) === (row.sid || row.id) && old.why === row.why)) B.piles[kind].push({ ...row }); }); });
+    B.checks = B.checks || []; B.checks.push({ at: new Date(NOW), by: me(), source: F.ivFile ? `导入 ${F.ivFile.name}` : F.ivIds ? '粘贴学号' : '勾选普测学生', piles: rows });
+    const res = {}; Object.entries(rows).forEach(([kind, values]) => res[kind] = values.map(row => `${row.sid ? nm(SU(row.sid)) : row.id}：${row.why}`));
+    log(`主动邀约 · 加学生：进入批次 ${res.in.length} · 对不上 ${res.bad.length} · 不走预约队列 ${res.skip.length} · 已有安排 ${res.has.length}`, null, { cat: '预约', obj: '主动邀约' }); S.ivRes = res; S.mo = 'ivRes:'; },
   schedRegGo() { const F = S.form; if (!F.rgc || !F.rgt || !(F.rgd || '').trim()) return toast('请选老师、类型，写日期');
     if (S.role !== 'L3' && !(S.role === 'L2' && F.rgc === me())) return toast('只能登记本人排班');
     const range = schedRegRange(F.rgd); if (!range) return toast('请输入有效日期，例如 2026-10-23 或 10/23 下午');
@@ -273,6 +280,7 @@ const _md19 = modal; modal = function () { const [k, id] = (S.mo || '').split(':
       (tab === 'pick' ? `<table class="t"><tr><th></th><th>学生</th><th>等级</th><th>学院</th></tr>${C.map(s => `<tr><td><input type="checkbox" data-act="ivPickT" data-arg="${s.id}" ${pk.includes(s.id) ? 'checked' : ''}></td><td>${nm(s)}</td><td>${lvV(s)}</td><td>${s.college}</td></tr>`).join('')}</table>`
         : tab === 'paste' ? fld('学号（一行一个，或用逗号隔开）', `<textarea data-bind="form.ivIds" rows="4" placeholder="${SURV().slice(0, 2).map(s => s.sid).join('&#10;')}">${esc(F.ivIds || '')}</textarea>`)
         : ivFileBox(F)), '核对并加入', 'ivAddGo', '', true); }
+  if (k === 'ivChecks') { if (S.role !== 'L3') return _md19(); const checks = ivb().checks || []; return mbox('历次核对记录', '核对结果随批次保存在本机，刷新后仍可查看。', checks.slice().reverse().map(check => `<div class="dbox"><b>${fmt(new Date(check.at))} · ${ST(check.by).name} · ${esc(check.source)}</b>${[['in', '进入批次'], ['bad', '对不上'], ['skip', '不走预约队列'], ['has', '已有安排']].map(([kind, name]) => `<p>${name}（${check.piles[kind].length}）：${check.piles[kind].map(row => `${esc(row.sid ? nm(SU(row.sid)) : row.id)} · ${esc(row.why)}`).join('；') || '—'}</p>`).join('')}</div>`).join('') || '<p>还没有添加学生的核对记录。</p>', '', '', '', true); }
   if (k === 'ivRes') { const r = S.ivRes || { in: [], bad: [], skip: [], has: [] };
     return mbox('核对结果', '', [['进入批次', r.in], ['对不上', r.bad], ['不走预约队列', r.skip], ['已有安排', r.has]].map(([n, L]) => `<div class="kv"><span>${n}（${L.length}）</span><b>${L.join('、') || '—'}</b></div>`).join(''), '', '', ''); }
   if (k === 'ivIk') { const x = ivMine().find(v => v.sid === id), s = SU(id), it = x && x.ik; if (!it || !it.sum) return _md19();
