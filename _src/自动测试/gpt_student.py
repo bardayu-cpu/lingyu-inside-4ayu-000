@@ -63,6 +63,19 @@ with sync_playwright() as p:
         page.locator('[data-act=ikNextQ]').click()
         chk(E('S.ik.ans.trouble') == '很累；主要在晚上出现', 'Q09 resumed probe appends once')
 
+    if want('Q08'):
+        E("reset('A');prepare('home');render();ACT.go('book');render()")
+        page.locator('[data-act=pickSlot]').first.click()
+        page.locator('[data-act=bookSubmit]').click()
+        page.locator('[data-act=ikNo]').click()
+        E('ACT.zMove();render()')
+        chk('新时间需要你接受才会确认' in page.locator('#modal').inner_text(), 'Q08 modal requires acceptance')
+        E("S.modal=null;S.page='mybook';render()")
+        body = page.locator('#app').inner_text()
+        chk('新时间需要你接受才会确认' in body and '不用操作' not in body and '待接受新时间' in body, 'Q08 body and badge agree on required acceptance')
+        page.locator('[data-act=movedOk]').click()
+        chk(E('S.bk.st') == '已确认' and '待接受新时间' not in page.locator('#app').inner_text(), 'Q08 acceptance changes status to confirmed')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 

@@ -125,7 +125,7 @@ function render() {
 }
 function header() {
   const p = S.page, b = S.bk;
-  const badge = b ? (b.st === '已确认' && !b.pend ? `<span class="badge ok" title="${L('你下一次咨询的时间', 'Your next session')}">${L('已约', 'Booked')} ${shortDay(DAYS[b.di])} ${DATA.times[b.ti]}</span>` : `<span class="badge">${b.pend ? L('待老师同意', 'Pending') : b.st === '已改约' ? L('老师改约', 'Moved') : L('待确认', 'Pending')}</span>`) : '';
+  const badge = b ? (b.st === '已确认' && !b.pend ? `<span class="badge ok" title="${L('你下一次咨询的时间', 'Your next session')}">${L('已约', 'Booked')} ${shortDay(DAYS[b.di])} ${DATA.times[b.ti]}</span>` : `<span class="badge">${b.pend ? L('待老师同意', 'Pending') : b.st === '已改约' ? L('待接受新时间', 'Accept new time') : L('待确认', 'Pending')}</span>`) : '';
   const unread = S.inbox.filter(x => !x.read).length;
   return tpl('hd-in', { navHome: p === 'home' ? 'on' : '', navSv: ['surveys', 'survey', 'intro', 'fun', 'funres'].includes(p) ? 'on' : '', navAi: ['ai', 'session', 'bridge', 'talks'].includes(p) ? 'on' : '', navGarden: p === 'garden' ? 'on' : '', navBook: ['mybook', 'book'].includes(p) ? 'on' : '', navHelp: p === 'help' ? 'on' : '', navMsgs: p === 'msgs',
     bookBadge: badge, hello: esc(S.profile ? prof().name : L('同学', 'there')), menu: S.menu ? tpl('menu') : '', menuOpen: S.menu ? 'true' : 'false',
@@ -285,7 +285,7 @@ function steps2(t) {
 /* v1.18：个人中心的待办里先放预约和老师的约谈（表格 S5、S6） */
 function homeExtra() { const R = [], row = (ico, t, tag, sub, btn) => `<div class="row todo"><span class="mini" style="background:var(--bub)">${I(ico)}</span><div class="grow"><b>${t}</b> ${tag}<small>${sub}</small></div><div class="acts">${btn}</div></div>`, b = S.bk;
   if (b && !['已完成', '已取消'].includes(b.st)) { const it = b.intake, ikTodo = b.kind === '预咨询' && !S.owner && (!it || ['none', 'draft'].includes(it.st));
-    R.push(row('cal', L(`预约咨询 · ${b.kind}`, b.kind === '预咨询' ? 'Counselling · Intake' : 'Counselling · Session'), `<span class="pill ${b.st === '已确认' && !b.pend ? 'g' : 'n'}">${b.pend ? L('待老师同意', 'Pending') : b.st === '已确认' ? L('已确认', 'Confirmed') : b.st === '已改约' ? L('老师改约', 'Moved') : L('待老师确认', 'Pending')}</span>`,
+    R.push(row('cal', L(`预约咨询 · ${b.kind}`, b.kind === '预咨询' ? 'Counselling · Intake' : 'Counselling · Session'), `<span class="pill ${b.st === '已确认' && !b.pend ? 'g' : 'n'}">${b.pend ? L('待老师同意', 'Pending') : b.st === '已确认' ? L('已确认', 'Confirmed') : b.st === '已改约' ? L('待接受新时间', 'Accept new time') : L('待老师确认', 'Pending')}</span>`,
       `${who(C(b.cid))}${SEP()}${L('咨询时间', 'Time')} ${bkWhen(b)}${ikTodo ? SEP() + L('预咨询小屿还没聊，聊完老师能提前了解你', 'Chat with Xiaoyu first so your counsellor knows you') : it && it.st === 'sent' ? SEP() + L('预咨询已发给老师', 'Intake sent') : ''}`,
       `<button class="btn ${ikTodo ? 'pri' : 'soft'} sm" data-act="go" data-arg="mybook">${ikTodo ? L('去聊聊', 'Start') : L('查看', 'View')}</button>`)); }
   (S.invs || []).filter(v => invNeed(v) || v.st === 'ok').forEach(v => R.push(row('chat', L(`${invWho(v)} 约你聊聊`, `${invWho(v)} would like to chat`), `<span class="pill ${invNeed(v) ? 'w' : 'g'}">${invSt(v)[0]}</span>`, `${invWhen(v)} ${invWhere(v)}`,
@@ -448,7 +448,7 @@ const msg = (who, text, voice) => who === 'bot' ? `<div class="m"><img src="${MA
 /* 可约的老师：规则 4 + 更换通过后排除原咨询师 */
 const canB = c => RULE.canBook(c, S.owner) && c.id !== S.excl;
 const bkWhen = b => `${fmtDay(DAYS[b.di])} ${DATA.times[b.ti]}`;
-const bkSt = b => b.pend ? (b.pend.type === 'cancel' ? L('取消待老师同意', 'Cancellation pending') : L('改期待老师同意', 'Reschedule pending')) : b.st === '已改约' ? L('老师已改约', 'Moved by counsellor') : T(b.st);
+const bkSt = b => b.pend ? (b.pend.type === 'cancel' ? L('取消待老师同意', 'Cancellation pending') : L('改期待老师同意', 'Reschedule pending')) : b.st === '已改约' ? L('待接受新时间', 'Acceptance pending') : T(b.st);
 /* 预约中心顶部：当前预约卡 */
 const bkMini = b => { const c = C(b.cid); return `<div class="bkmini">${avatar(c)}<div class="grow"><small>${L('我的预约', 'My appointment')}</small><b>${T(b.kind)} · ${who(c)}</b><span>${bkWhen(b)}</span></div><span class="pill ${b.st === '已确认' && !b.pend ? 'g' : ''}">${bkSt(b)}</span><button class="btn soft sm" data-act="go" data-arg="mybook">${L('查看与改期', 'View or reschedule')}</button></div>`; };
 function firstOpen(j) { for (let di = 0; di < DAYS.length; di++) for (let ti = 0; ti < DATA.times.length; ti++) if (slotState(j, di, ti) === 'open') return [di, ti]; return null; }
@@ -548,7 +548,7 @@ const histRow = (h, extra = '') => { const off = h.st !== '已完成'; return `<
 function bkWarn(b) {
   if (b.pend && b.pend.type === 'resch') return `<div class="warnbar"><span class="ico">${I('edit')}</span><div class="grow"><b>${L('改期申请等待老师同意', 'Waiting for approval to reschedule')}</b><small>${L(`新时间：${fmtDay(DAYS[b.pend.di])} ${DATA.times[b.pend.ti]}，${who(C(b.pend.cid))}。老师同意之前，下面的原预约仍然有效。`, `New time: ${fmtDay(DAYS[b.pend.di])} ${DATA.times[b.pend.ti]} with ${C(b.pend.cid).name}. Until approved, the appointment below stands.`)}</small></div></div>`;
   if (b.pend) return `<div class="warnbar"><span class="ico">${I('x')}</span><div class="grow"><b>${L('取消申请等待老师同意', 'Waiting for approval to cancel')}</b><small>${L('老师同意之前，这次预约仍然有效。', 'Until approved, this appointment stands.')}</small></div></div>`;
-  if (b.st === '已改约') return `<div class="warnbar"><span class="ico">${I('cal')}</span><div class="grow"><b>${L('老师调整了预约时间', 'Your counsellor changed the time')}</b><small>${L(`由 ${b.oldWhen} 改为 ${fmtDay(DAYS[b.di])} ${DATA.times[b.ti]}`, `From ${b.oldWhen} to ${fmtDay(DAYS[b.di])} ${DATA.times[b.ti]}`)}</small></div><button class="btn pri sm" data-act="movedOk">${L('接受新时间', 'Accept')}</button></div>`;
+  if (b.st === '已改约') return `<div class="warnbar"><span class="ico">${I('cal')}</span><div class="grow"><b>${L('老师提出了新时间，等你接受', 'New time proposed — please accept')}</b><small>${L(`由 ${b.oldWhen} 改为 ${fmtDay(DAYS[b.di])} ${DATA.times[b.ti]}`, `From ${b.oldWhen} to ${fmtDay(DAYS[b.di])} ${DATA.times[b.ti]}`)}</small></div><button class="btn pri sm" data-act="movedOk">${L('接受新时间', 'Accept')}</button></div>`;
   return '';
 }
 function myBookPage() {
@@ -556,13 +556,13 @@ function myBookPage() {
   let cur = '';
   if (b) {
     const c = C(b.cid), conf = b.st === '已确认', moved = b.st === '已改约', step = conf ? 2 : 1, end = addMin(DATA.times[b.ti], b.kind === '预咨询' ? 30 : 50);
-    cur = `<div class="bk"><div class="bh ${conf ? 'ok' : ''}">${avatar(c)}<div class="grow"><b>${T(b.kind)}</b><br><button class="lnk" data-act="cp" data-arg="${c.id}">${who(c)}</button><small style="color:var(--mute2)">${SEP()}${T(c.role)}</small></div><span class="pill ${conf && !b.pend ? 'g' : ''}">${b.pend ? (b.pend.type === 'cancel' ? L('取消待老师同意', 'Cancellation pending') : L('改期待老师同意', 'Reschedule pending')) : moved ? L('老师已改约', 'Moved by counsellor') : T(b.st)}</span></div>
+    cur = `<div class="bk"><div class="bh ${conf ? 'ok' : ''}">${avatar(c)}<div class="grow"><b>${T(b.kind)}</b><br><button class="lnk" data-act="cp" data-arg="${c.id}">${who(c)}</button><small style="color:var(--mute2)">${SEP()}${T(c.role)}</small></div><span class="pill ${conf && !b.pend ? 'g' : ''}">${b.pend ? (b.pend.type === 'cancel' ? L('取消待老师同意', 'Cancellation pending') : L('改期待老师同意', 'Reschedule pending')) : moved ? L('待接受新时间', 'Acceptance pending') : T(b.st)}</span></div>
       <div class="bb">${bkWarn(b)}<div class="tl">${[L('提交申请', 'Requested'), L('老师确认', 'Confirmed'), L('咨询', 'Session'), L('完成', 'Done')].map((x, i) => `<div class="${i < step ? 'on' : ''}">${x}</div>`).join('')}</div>
       <div class="kv">${I('cal', 's')}<span>${L('时间', 'When')}</span><b>${fmtDay(DAYS[b.di])} ${DATA.times[b.ti]}–${end}</b>
         ${I(b.mode === '线上' ? 'video' : 'pin', 's')}<span>${b.mode === '线上' ? L('线上', 'Online') : L('地点', 'Where')}</span><b>${conf ? (b.mode === '线上' ? L('Zoom 会议链接，开始前 30 分钟可进入', 'Zoom link — opens 30 min before') : DATA.room) : (b.mode === '线上' ? L('确认后发送会议链接', 'Link sent after confirmation') : L('确认后通知具体房间', 'Room shared after confirmation'))}</b>
         ${I('chat', 's')}<span>${L('想聊的主题', 'Topics')}</span><b>${b.topics.map(T).join(L('、', ', ')) || L('未填写', 'None given')}</b></div>
       <div class="tip">${conf ? L('开始前一天和开始前 1 小时会提醒你。如需改期，请至少提前 24 小时。', 'We’ll remind you the day before and 1 hour before. Reschedule at least 24 hours ahead if needed.')
-        : moved ? L('老师调整了时间。这个时间可以的话不用操作，老师会再确认；不方便可以改期。', 'Your counsellor suggested a new time. If it works, no action is needed; otherwise reschedule.')
+        : moved ? L('新时间需要你接受才会确认。方便的话请点「接受新时间」；不方便可以改期另选时间。', 'Please accept the new time to confirm it. If it does not work, reschedule to pick another time.')
         : b.late ? L('老师还没有确认。我们已提醒 UCC 跟进，这个时段仍为你保留。着急的话，可以直接联系 UCC。', 'Not confirmed yet. We’ve asked UCC to follow up, and the time is still held for you. If it’s urgent, contact UCC directly.')
         : L('这个时段已为你保留。老师确认后才算预约成功，通常 2 个工作日内回复。', 'This time is held for you. It’s booked once the counsellor confirms — usually within 2 working days.')}</div>
       <div class="act">${b.pend ? `<button class="btn sec sm" data-act="pendBack">${L('撤回申请', 'Withdraw request')}</button><span class="zap" data-act="zPend">⚡ ${L('演示 · 模拟老师同意', 'Demo: counsellor approves')}</span>` : `<button class="btn sec sm" data-act="resch" ${left('resch') || moved ? '' : 'disabled'}>${I(left('resch') || moved ? 'edit' : 'lock', 's')}${L('改期', 'Reschedule')}</button><button class="btn ghost sm" data-act="modal" data-arg="cancel" ${left('cancel') ? '' : 'disabled'}>${left('cancel') ? '' : I('lock', 's')}${L('取消预约', 'Cancel')}</button>`}
@@ -812,7 +812,7 @@ const ACT = {
     if (ti < 0) { di = b.di; ti = (b.ti + 1) % DATA.times.length; if (di === b.di && ti === b.ti) return toast(L('这位老师近期没有其他空档', 'No other openings for this counsellor')); }
     b.oldWhen = bkWhen(b);
     const old = `${fmtDay(DAYS[b.di])} ${DATA.times[b.ti]}`; Object.assign(b, { di, ti, st: '已改约', moved: true });
-    addMsg('edit', [`${whoZ(b.cid)}调整了你的预约时间`, `${C(b.cid).name} moved your appointment`], [`由 ${old} 改为 ${fmtDay(DAYS[di])} ${DATA.times[ti]}。如不方便，可以在「我的预约」里改期。`, `New time: ${fmtDay(DAYS[di])} ${DATA.times[ti]}. Reschedule in My appointments if it doesn’t work.`], 'mybook');
+    addMsg('edit', [`${whoZ(b.cid)}提出了新的预约时间`, `${C(b.cid).name} proposed a new appointment time`], [`由 ${old} 改为 ${fmtDay(DAYS[di])} ${DATA.times[ti]}。请在「我的预约」里接受新时间；不方便可以改期。`, `New time: ${fmtDay(DAYS[di])} ${DATA.times[ti]}. Accept it in My appointments, or reschedule if it does not work.`], 'mybook');
     b.moveSeen = true; S.modal = 'moved'; },
   movedOk() { S.bk.st = '已确认'; S.bk.moveSeen = true; S.modal = null; addFoot('check', ['接受了老师调整的预约时间', 'Accepted the new time'], 'go:mybook'); toast(L('已接受新时间', 'New time accepted')); },
   movedResch() { S.bk.moveSeen = true; S.modal = 'resch'; },
