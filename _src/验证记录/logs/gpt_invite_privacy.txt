@@ -1,0 +1,7 @@
+Acceptance acknowledgement without admin login; draft remains local: passed
+Sent note -> teacher decline -> re-entry -> resubmit: passed
+Pending reschedule preserves invitation, batch link and note; stable renders do not resend: passed
+Teacher decline after old submission deadline returns a valid protected entry: passed
+No replacement time for renewed window: original pending request retained: passed
+ADM action permissions: passed
+gpt_invite_privacy: 6 groups passed; 1440 x 1000; no browser errors

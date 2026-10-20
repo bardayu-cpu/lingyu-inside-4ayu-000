@@ -1,0 +1,11 @@
+PASS held slot survives temporary hold allocation
+PASS moveAccept confirms batch and appointment together
+PASS allowed counsellor/mode/place enforced: [False, False, False, True]
+PASS normal and invite reschedule visibility matches receive gate: [{'core': 'lin', 'visible': ['c1|2026-10-21|09:00', 'c1|2026-10-23|09:00'], 'received': ['c1|2026-10-21|09:00', 'c1|2026-10-23|09:00']}, {'core': 'chen', 'visible': ['c1|2026-10-20|09:00', 'c1|2026-10-22|09:00'], 'received': ['c1|2026-10-20|09:00', 'c1|2026-10-22|09:00']}]
+PASS newly published schedule advances queue: {'before': 'queue', 'after': 'entry', 'held': True}
+PASS new demo invitation ID is sent even when its rv is smaller
+PASS logged-out institution still acknowledges invitation reply: {'student': {'id': 'demo-A-1792483926692', 'rv': 1, 'sv': 2}, 'server': {'id': 'demo-A-1792483926692', 'rv': 1}}
+PASS pending invite reschedule retains source and invitation ID: {'inv': True, 'id': 'edge-source'}
+PASS approved invite reschedule retains source and invitation ID: {'inv': True, 'id': 'edge-source'}
+PASS no browser script errors: []
+gpt_invite_edges: 10 passed

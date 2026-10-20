@@ -1,0 +1,6 @@
+Ratio: one audit, one notification each to c1 / c2 / c3 / c4
+Hold release: one audit, one notification each to c1 / c2 / c3 / c4
+Invitation level: one audit, one notification each to c1 / c2 / c3 / c4
+College quota: one audit, one notification each to c1 / c2 / c3 / c4
+Approval (applicant not duplicated): one audit, one notification each to c1 / c2 / c3 / c4
+gpt_pool_notifications: 7 checks passed; 1440 x 1000; no browser errors

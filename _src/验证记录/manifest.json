@@ -1,0 +1,34 @@
+{
+  "version": "v1.19.2-gpt",
+  "base": "1a1faced5509460310fbd9902703f34f5c4f0ea9",
+  "code_commit": "7f905efcfcf4b407a5dff49abd728c65b206c859",
+  "index_sha256": "1d2ef8c3b2f90b3da2511bbd94eeb79170664e5dcff7e788467547aad99d57cd",
+  "rebuild_identical": true,
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "test_logs": [
+    "adm19.txt",
+    "gpt_admin_copy.txt",
+    "gpt_admin_duty.txt",
+    "gpt_capacity.txt",
+    "gpt_deadlines.txt",
+    "gpt_drafts.txt",
+    "gpt_import.txt",
+    "gpt_invite_edges.txt",
+    "gpt_invite_link.txt",
+    "gpt_invite_metrics.txt",
+    "gpt_invite_permissions.txt",
+    "gpt_invite_privacy.txt",
+    "gpt_invite_quota.txt",
+    "gpt_keep.txt",
+    "gpt_pool_notifications.txt",
+    "gpt_risk.txt",
+    "gpt_schedule.txt",
+    "gpt_student.txt",
+    "gpt_visual.txt",
+    "stu19.txt",
+    "trial_v119.txt"
+  ]
+}
