@@ -75,6 +75,23 @@ function recView() { const t = TALKS.find(x => x.id === S.rv), v = recVis(t), mi
 const recRisk = R => TALK_RE.test([R.situ, R.need, R.topic, R.cwhy, ...Object.values(R.pp || {}).map(p => p.txt)].join(' '));
 // 比较命中的词项，不能用“以前已命中过”的布尔值吞掉本次新增表达。
 const talkRiskWords = txt => cwFind(txt).hit.filter(w => cwL(w) <= 2);
+// 新报告附到未结案危机；升级后保留首次触发及旧接收记录，单独计本次紧急确认时间。
+const talkRiskReport = (t, s, words, src) => {
+  const urgent = words.some(w => cwL(w) === 1), k0 = CRISES.find(k => k.sid === s.id && k.st !== 'closed');
+  if (k0) {
+    k0.recs = [...new Set([...(k0.recs || []), t.id])]; k0.src.push({ t: src, at: new Date(NOW), rec: t.id });
+    if (urgent && (!k0.urgent || k0.recv || k0.st !== 'new')) {
+      if (k0.recv) k0.recvHistory = [...(k0.recvHistory || []), k0.recv];
+      k0.urgent = true; k0.urgentAt = new Date(NOW); k0.st = 'new'; k0.recv = null; k0.esc = 0; delete k0.shown;
+      crisisNotify(k0, new Date(NOW));
+    } else [s.owner || 'c5', dutyNow()].filter((u, i, a) => a.indexOf(u) === i).forEach(u => notify(u, urgent && u === dutyNow() ? '短信 + 电话' : '站内', `${src}：${nm(s)}${urgent ? `，请 ${RULES.urgentMin} 分钟内确认` : ''}`, k0.id));
+    log(`谈话记录新增${urgent ? '一级' : '二级'}风险表达，已附到现有危机（${tkId(t)}）${urgent ? `，${RULES.urgentMin} 分钟内确认` : ''}`, s, { k: 'report', cat: '危机', noTl: 1 });
+    return k0;
+  }
+  const k = newCrisis(s, src, '学院报告', urgent, words);
+  if (k) { k.by = me(); k.fromRec = t.id; }
+  log(`谈话记录命中危机词，自动报告${urgent ? '紧急情况' : '风险情况'}`, s, { k: 'report', cat: '危机', r: 1 }); return k;
+};
 const recDone = (t, ids, R) => ITEMS.filter(x => ids.includes(x.id) && x.st === 'open').forEach(x => { x.st = 'done'; x.rec = t.id; x.doneAt = new Date(NOW); const s = SU(x.sid), a = (s.asks || []).find(q => q.item === x.id && !q.done);
   if (a) { a.st = '完成'; a.log.push({ at: new Date(NOW), st: '完成', note: '已谈心，见谈话记录' }); a.done = { at: new Date(NOW), note: '已谈心' }; notify(a.by, '站内', `${ST(me()).name} 已完成谈心：${nm(s)}`, s.id); } });
 const addNext = (t, ids) => ids.forEach(id => { const st0 = later(NEXTS[t.next] * 24), x = addItem({ sid: id, to: me(), src: 'next', startAt: st0, due: new Date(st0.getTime() + 7 * 864e5), rec: t.id, why: `上次谈话约定 ${t.next}` }); if (inCrisis(id)) { x.prevSt = 'open'; x.st = 'frozen'; x.frozenAt = new Date(NOW); } });   // 危机中生成的事项直接冻结，结案时一起决定
@@ -127,10 +144,8 @@ function recSave(draft) { const R = S.rec, edit = R.id && TALKS.find(t => t.id =
   revoked.forEach(x => log(`收回分享：${tkId(t)} → ${ST(x.to).name}`, SU(t.sid), { cat: '流转', noTl: 1, obj: '谈话记录' }));
   log(`${formal ? '修改' : '保存'}谈话记录（${t.mode} · ${t.result}${t.center ? '，希望中心介入' : ''}${fresh.length ? `，分享给 ${fresh.map(x => ST(x.to).name).join('、')}` : ''}${t.sis ? '，勾选同步 SIS' : ''}）`, SU(t.sid), { k: 'talkLog', noTl: 1, obj: '谈话记录' });
   S.rec = null; S.tabs.talk = 'recs';
-  if (hitIds.length) { const ks = hitIds.map(id => { const s = SU(id), k0 = CRISES.find(k => k.sid === id && k.st !== 'closed');
-      if (k0) { k0.recs = (k0.recs || []).concat(t.id); s.tl.push({ at: new Date(NOW), t: '谈话记录里又出现安全相关的表达（已附到危机记录，值班可以查看）', who: ST(me()).name, k: 'crisis', r: 1 });
-        [s.owner || 'c5', dutyNow()].filter((u, i, a) => a.indexOf(u) === i).forEach(u => notify(u, '站内', `${ST(me()).name} 的谈话记录里出现安全相关的表达：${nm(s)}`, s.id)); log(`谈话记录里又出现安全相关的表达，已附到现有危机（${tkId(t)}）`, s, { k: 'report', cat: '危机', noTl: 1 }); return k0; }
+  if (hitIds.length) { const ks = hitIds.map(id => {
       const words = [...(cHit && (R.cw === 'all' || !multi || R.cw === id) ? addedCommon : []), ...addedPersonal[id]];
-      const k = newCrisis(s, `${ST(me()).name} 的谈话记录里出现安全相关的表达（保存时自动报告）`, '学院报告', true, words); if (k) { k.by = me(); k.fromRec = t.id; } log('谈话记录命中危机词，自动报告紧急情况', s, { k: 'report', cat: '危机', r: 1 }); return k; }).filter(Boolean);
+      return talkRiskReport(t, SU(id), words, `${ST(me()).name} 的谈话记录里出现安全相关的表达（保存时自动报告）`); }).filter(Boolean);
     if (ks[0]) S.mo = `tkCrisis:${ks[0].id}`; return; }
   toast(doneIds.length ? `已保存，完成了 ${doneIds.length} 个事项` : '已保存'); }

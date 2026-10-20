@@ -44,7 +44,38 @@ def r10(page):
     assert page.evaluate("AUDIT.some(a => a.k === 'report' && a.sid === riskSid)"), 'report must be audited'
 
 
-CASES = {'R10': r10}
+def r11(page):
+    for received in (False, True):
+        page.evaluate("""received => {
+          closeRisk(); makeRiskRec('学生说：绝望'); recSave(false);
+          window.riskTid = TALKS[TALKS.length - 1].id; window.existingRiskId = activeRisk()[0].id;
+          const k = activeRisk()[0]; k.at = new Date(NOW - 5 * H); window.originalRiskAt = +k.at;
+          if (received) { k.st = 'handling'; k.recv = { by: 'c4', at: new Date(NOW - H) }; }
+          S.form = { add: '学生发消息说：现在想死' }; ACT.tkAddGo(riskTid);
+        }""", received)
+        assert page.evaluate("activeRisk().length === 1 && activeRisk()[0].id === existingRiskId"), 'append must attach to one existing crisis'
+        assert page.evaluate("activeRisk()[0].urgent && activeRisk()[0].st === 'new' && !activeRisk()[0].recv"), 'new level-1 event must wait for urgent confirmation'
+        assert page.evaluate("+activeRisk()[0].at === originalRiskAt && activeRisk()[0].urgentAt && cLeft(activeRisk()[0]) > 0.4"), 'urgent timer must start with upgrade without losing original source time'
+        assert page.evaluate("NOTI.some(n => n.ref === existingRiskId && n.ch.includes('电话') && n.t.includes('30 分钟'))"), 'upgrade must call the duty counselor with a 30-minute limit'
+        assert page.evaluate("AUDIT.some(a => a.k === 'report' && a.t.includes('已附到现有危机'))"), 'append to existing crisis must be audited'
+        if received:
+            assert page.evaluate("activeRisk()[0].recvHistory.length === 1"), 'prior confirmation must remain in history'
+        page.evaluate("""() => {
+          const k = activeRisk()[0]; NOW.setTime(+k.urgentAt + 29 * 60e3); tick();
+        }""")
+        assert page.evaluate("activeRisk()[0].esc === 0"), 'upgrade must not escalate before 30 minutes'
+        page.evaluate("NOW.setTime(+activeRisk()[0].urgentAt + 31 * 60e3); tick()")
+        assert page.evaluate("activeRisk()[0].esc === 1"), 'unconfirmed upgrade must escalate after 30 minutes'
+        assert page.evaluate("activeRisk()[0].recs.filter(id => id === riskTid).length === 1"), 'one record reference per existing crisis'
+    page.evaluate("""() => {
+      closeRisk(); makeRiskRec('学生说：绝望'); recSave(false);
+      window.existingRiskId = activeRisk()[0].id; window.riskTid = TALKS[TALKS.length - 1].id;
+      S.rec = recFrom(TALKS.find(t => t.id === riskTid)); S.rec.situ += '。想结束生命'; recSave(false);
+    }""")
+    assert page.evaluate("activeRisk().length === 1 && activeRisk()[0].id === existingRiskId && activeRisk()[0].urgent"), 'edited record must also upgrade the existing crisis'
+
+
+CASES = {'R10': r10, 'R11': r11}
 
 
 def main():

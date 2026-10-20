@@ -30,9 +30,8 @@ function stuReply(v, r, slots, why) { const s = SU(v.sid); v.reply = r; v.repAt 
   else { v.st = 'no'; ITEMS.filter(x => v.items.includes(x.id) && x.st === 'open').forEach(x => { x.st = 'closed'; x.closeWhy = '学生这次不想谈'; x.inv = null; });
     if (curLv(s) >= 4) addXf('decline', s, { from: v.by, note: '学生在邀约里选了「这次不用了」' }); }
   notify(v.by, '站内', `${s.name} 回复了邀约：${r}`, s.id); log(`学生回复邀约：${r}${r === '换个时间' && slots ? `（${slots.map(x => `${x.day} ${x.part}`).join('、')}）` : ''}`, s, { k: 'inv', sys: 1, cat: '流转', obj: '邀约' }); }
-const riskAdd = (t, txt, sid = t.sid) => { if (!TALK_RE.test(txt)) return null; t.risk = 1; t.forced = true; const s = SU(sid), k0 = CRISES.find(k => k.sid === s.id && k.st !== 'closed');
-  if (k0) { k0.recs = (k0.recs || []).concat(t.id); [s.owner || 'c5', dutyNow()].filter((u, i, a) => a.indexOf(u) === i).forEach(u => notify(u, '站内', `${ST(me()).name} 追加的内容里出现安全相关的表达：${nm(s)}`, s.id)); return k0; }
-  const k = newCrisis(s, `${ST(me()).name} 追加的谈话记录里出现安全相关的表达（保存时自动报告）`, '学院报告', true); if (k) { k.by = me(); k.fromRec = t.id; } log('谈话记录追加内容命中危机词，自动报告紧急情况', s, { k: 'report', cat: '危机', r: 1 }); return k; };
+const riskAdd = (t, txt, sid = t.sid) => { const words = talkRiskWords(txt); if (!words.length) return null; t.risk = 1; t.forced = true;
+  return talkRiskReport(t, SU(sid), words, `${ST(me()).name} 追加的谈话记录里出现安全相关的表达（保存时自动报告）`); };
 const recFrom = t => Object.assign(recNew(t.sid), { id: t.id, sids: (t.sids || [t.sid]).slice(), who: (t.who || ['本人']).slice(), date: ymd(t.at), tm: `${pad(t.at.getHours())}:${pad(t.at.getMinutes())}`, plan: t.plan, inv: t.inv, mode: t.mode, place: t.place, result: t.result, situ: t.situ, types: (t.types || []).slice(), need: t.need || '', topic: t.topic || '', next: t.next || '不需要', center: !!t.center, cwhy: t.cwhy || '',
     done: t.draft ? recNew(t.sid, t.inv).done : [], shares: (t.shares || []).map(x => Object.assign({}, x, { parts: x.parts.slice(), days: x.days || 30 })), sis: t.sis, src0: t.src0, t0: t.t0, prev: t.prev, same: !!t.prev, pp: JSON.parse(JSON.stringify(t.pp || {})), backfill: t.backfill, cw: t.cw, dirty: false });
 const _go14 = ACT.go;

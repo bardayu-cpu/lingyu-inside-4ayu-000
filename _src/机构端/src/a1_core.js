@@ -82,9 +82,10 @@ const crisisNew = () => CRISES.filter(k => k.st === 'new').sort((a, b) => a.at -
 /* 紧急报告（学院 / 他人报告、学生主动求助）按分钟确认；普通危机 12 小时 */
 const kLim = k => k.urgent ? RULES.urgentMin / 60 : 12;
 const kEsc = k => k.urgent ? [RULES.urgentMin / 60, 2] : [RULES.esc, RULES.esc2];
-const cLeft = k => kLim(k) - hrs(k.at);
+const kClock = k => k.urgentAt || k.at;
+const cLeft = k => kLim(k) - hrs(kClock(k));
 /* 12 小时内接收率：分母含已超过 12 小时仍未接收的 */
-const recvRate = () => { const rec = CRISES.filter(k => k.recv), late = CRISES.filter(k => k.st === 'new' && cLeft(k) < 0), n = rec.length + late.length; const ok = rec.filter(k => (k.recv.at - k.at) / H <= kLim(k)).length; return { ok, n, txt: n ? `${ok}/${n}` : '—' }; };
+const recvRate = () => { const rec = CRISES.filter(k => k.recv), late = CRISES.filter(k => k.st === 'new' && cLeft(k) < 0), n = rec.length + late.length; const ok = rec.filter(k => (k.recv.at - kClock(k)) / H <= kLim(k)).length; return { ok, n, txt: n ? `${ok}/${n}` : '—' }; };
 const slotDate = (day, t) => { const d = day < 0 ? new Date(2026, 9, 9) : new Date(DD(day)); const [h, m] = TIMES[t].split(':'); d.setHours(+h, +m, 0, 0); return d; };
 const todayIdx = () => DAYS.findIndex(d => sameDay(d, NOW));
 /* 未提交排班：接下来两个工作日，某位咨询师一个时段都没开放 */
@@ -125,9 +126,9 @@ function tick() {
   CRISES.forEach(k => {
     if (k.st !== 'new') return; const s = SU(k.sid);
     const [e1, e2] = kEsc(k), t1 = k.urgent ? `${RULES.urgentMin} 分钟` : `${e1} 小时`, t2 = `${e2} 小时`;
-    if (hrs(k.at) >= e1 && k.esc < 1) { k.esc = 1; if (k.urgent) { notify(DUTY[0].who, '电话（追呼）', `紧急报告 ${t1} 未确认，再次呼叫`, k.id); k.notified.push(`${ST(DUTY[0].who).name}（追呼 · 电话）`); } notify('c5', '短信 + 电话', `危机已 ${t1} 无人接收，升级到中心负责人`, k.id); k.notified.push('朱静（升级 · 短信 + 电话）');
+    if (hrs(kClock(k)) >= e1 && k.esc < 1) { k.esc = 1; if (k.urgent) { notify(DUTY[0].who, '电话（追呼）', `紧急报告 ${t1} 未确认，再次呼叫`, k.id); k.notified.push(`${ST(DUTY[0].who).name}（追呼 · 电话）`); } notify('c5', '短信 + 电话', `危机已 ${t1} 无人接收，升级到中心负责人`, k.id); k.notified.push('朱静（升级 · 短信 + 电话）');
       log(`危机 ${t1} 无人接收，${k.urgent ? '再次呼叫值班并' : '自动'}升级到中心负责人朱静`, s, { sys: 1, cat: '危机', r: 1, k: 'crisis' }); if (k.by) notify(k.by, '站内', `你报告的紧急情况 ${t1} 未确认，已再次呼叫并通知中心负责人`, k.id); }
-    if (hrs(k.at) >= e2 && k.esc < 2) { k.esc = 2; notify('vp', '电话', `危机已 ${t2} 无人接收，二级升级到分管领导`, k.id); k.notified.push('何处长（二级升级 · 电话）');
+    if (hrs(kClock(k)) >= e2 && k.esc < 2) { k.esc = 2; notify('vp', '电话', `危机已 ${t2} 无人接收，二级升级到分管领导`, k.id); k.notified.push('何处长（二级升级 · 电话）');
       log(`危机 ${t2} 无人接收，二级升级到学生事务处分管领导`, s, { sys: 1, cat: '危机', r: 1, k: 'crisis' }); }
   });
   STU.forEach(s => { if (s.stage === 'L1' && s.queue === 'pending' && s.next && s.next <= NOW && !s.nextNotified) { s.nextNotified = true; notify(s.follower, '站内', `「待补充信息」到了约定时间：${nm(s)}`, s.id); } });
