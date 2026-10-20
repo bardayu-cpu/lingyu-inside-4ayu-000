@@ -52,7 +52,7 @@ function slotState(ci, di, ti) {
     if (!DAYS[di] || !DATA.times[ti]) return 'closed';
     const date = new Date(DAYS[di]), cid = DATA.counsellors[ci] && DATA.counsellors[ci].id, key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     const slot = S._schedSnapshot.find(x => x.cid === cid && x.date === key && x.time === DATA.times[ti]);
-    if (!slot || slot.st === 'closed') return 'closed';
+    if (!slot || slot.st === 'closed' || S._slotAllowed && !S._slotAllowed.includes(slot.key)) return 'closed';
     const [h,m] = DATA.times[ti].split(':'); date.setHours(+h,+m,0,0);
     if (date - NOW < 24 * 3600e3) return 'early';
     return slot.st === 'open' ? 'open' : 'taken';

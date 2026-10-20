@@ -94,8 +94,8 @@ const _zBook19 = ACT.zBook; ACT.zBook = function () { const n0 = BOOK.length, t0
 
 /* ---------- 3. 号池、主动邀约批次（演示数据；数字都是可调的默认值） ---------- */
 RULES.pool = RULES.pool || { inv: 20, hold: 4, ivLv: 3, col: {}, apps: [], R: 120, FIX: 50 };
-const poolN = () => { const P = RULES.pool, inv = Math.round(P.R * P.inv / 100); return { inv, norm: P.R - inv, hold: Math.min(P.hold, inv), can: Math.max(0, inv - Math.min(P.hold, inv)) }; };
-const IV_ST = { new: ['未发卡', ''], sent: ['已发卡 · 待回复', 'w'], no: ['这次不参加', ''], late: ['没回复', 'r'], ik: ['预咨询中', 'p'], queue: ['排队等入口', 'w'], entry: ['有入口 · 待选时间', 'p'], sub: ['已申请 · 待老师确认', 'w'], ok: ['已确认', 'g'], nofit: ['时间都不合适', 'w'] };
+const poolN = () => ivPool();
+const IV_ST = { new: ['未发卡', ''], sent: ['已发卡 · 待回复', 'w'], no: ['这次不参加', ''], late: ['没回复', 'r'], ik: ['预咨询中', 'p'], queue: ['排队等入口', 'w'], entry: ['有入口 · 待选时间', 'p'], sub: ['已申请 · 待老师确认', 'w'], ok: ['已确认', 'g'], nofit: ['时间都不合适', 'w'], adjust: ['中心调整 · 待重新安排', 'w'] };
 const IV_KPI = [['sent', '已发卡'], ['acc', '接受'], ['no', '不参加'], ['ik', '预咨询中'], ['queue', '排队等入口'], ['entry', '有入口'], ['sub', '已申请'], ['ok', '已确认']];
 const ivResp = s => { const c = s.owner || s.assignee; return c && STAFF[c] && ['L2', 'L3'].includes(STAFF[c].role) ? c : l2For(s); };
 const IK_DEMO = [{ topics: ['情绪低落', '睡眠'], trouble: '最近总是提不起劲，晚上很晚才睡着，早上起不来，课也落下了', dur: '一个月左右', impact: '影响很大', sleep: '变化很大', support: '不太确定', expect: '想有人听我说说', extra: '' },
@@ -163,13 +163,13 @@ const bkMan = () => { const r = S.role; let list = BOOK.slice(); if (r === 'L2')
     <p class="note" style="margin-top:10px">规则：所有预约都要老师确认，学生自己约普通号和主动邀约来的学生都一样。提前 24 小时预约；学生每 14 天可改期、取消各 1 次（老师改约不计）。确认时限：危机 ${RULES.lim.book5} 小时，其余 ${RULES.lim.book} 小时；超时自动进入待办池，由中心负责人指派。</p></div>`; };
 
 /* 主动邀约：批次、核对四堆、发邀约卡、进度、容量缺口、申请额度 */
-const bkInv = () => { const B = ivb(), L = ivMine(), c = ivCnt(L), P = poolN(), wait = ivb().list.filter(x => ['new', 'sent', 'ik', 'queue'].includes(x.st)).length, gap = Math.max(0, B.list.length - c.no - P.can);
+const bkInv = () => { const B = ivb(), L = ivMine(), c = ivCnt(L), P = poolN(), wait = ivb().list.filter(x => ['new', 'sent', 'ik', 'queue'].includes(x.st)).length, gap = Math.max(0, B.list.filter(x => !['no', 'ok'].includes(x.st)).length - P.can - B.list.filter(x => x.st === 'sub').length);
   const f = S.f.ivst || '', rows = L.filter(x => !f || ivMatches(x, f)), nNew = L.filter(x => x.st === 'new').length, tiers = [...new Set(L.filter(x => x.st === 'new').map(x => x.lv >= 4 ? 4 : x.lv))];
   return `<p class="intro">${I('info', 's')}<span>普测命中主动邀约等级（${RULES.pool.ivLv} 级及以上，在「号池配置」里设）的学生，由老师按批确认后发<b>邀约卡</b>。学生接受后马上做 AI 预咨询（不占号），做完按顺序自动拿到<b>人工预约入口</b>，号不够就排队。邀约卡和入口的 24 小时提醒按规则自动发；普测结束后系统不会主动给任何学生发卡。</span></p>
     <div class="card"><h3>${I('users')}${B.name}<span class="sp"></span><small>${fmt(B.at)} 由 ${ST(B.by).name} 建 · ${S.role === 'L3' ? '全部学生' : '你负责的学生'}</small>${S.role === 'L3' ? `<button class="btn sec xs" data-act="mo" data-arg="ivAdd:">${I('plus', 's')}加学生</button>` : ''}</h3>
       <div class="kv"><span>核对结果</span><b>进入批次 ${B.list.length} 人 · 对不上 ${B.piles.bad.length} · 不走预约队列 ${B.piles.skip.length}（${B.piles.skip.map(x => `${nm(SU(x.sid))}：${x.why}`).join('；') || '—'}） · 已有安排 ${B.piles.has.length}${B.piles.has.length ? `（${B.piles.has.map(x => nm(SU(x.sid))).join('、')}，已有在途预约）` : ''}</b></div>
       <div class="grid g4" style="margin:12px 0">${IV_KPI.map(([k, n]) => `<button class="kpi ${f === k ? 'on' : ''}" data-act="ivF" data-arg="${k}"><small>${n}</small><b>${c[k]}</b><span>${k === 'sent' ? `累计发出 · 本批共 ${L.length} 人` : k === 'acc' ? `累计接受率 ${c.sent ? Math.round(c.acc / c.sent * 100) : 0}%` : k === 'ok' ? `成功率 ${c.ok + c.sub + c.entry ? Math.round(c.ok / (c.ok + c.sub + c.entry) * 100) : 0}%` : '点这里筛选'}</span></button>`).join('')}</div>
-      <div class="dbox ${gap ? 'warn' : ''}"><b>${I('alert', 's')}容量缺口</b><p style="margin:4px 0 0">名单 ${B.list.length} 人（不含不参加的 ${c.no} 人），本窗口可发额度 ${P.can} 个号${gap ? `，<b>至少 ${gap} 人这一窗口约不上</b>。缺口由中心负责人处理：分阶段排到下一个 30 天、加排班、转辅导员谈心或团体辅导，或继续等（负责老师按等待期限复核）。` : '，够用。'}</p>
+      <div class="dbox ${gap ? 'warn' : ''}"><b>${I('alert', 's')}容量缺口</b><p style="margin:4px 0 0">本批 ${B.list.length} 人，已确认 ${c.ok} 人、不参加 ${c.no} 人；本窗口尚可承接 ${P.can + B.list.filter(x => x.st === 'sub').length} 人（含申请中为学生保留的时段）${gap ? `，<b>至少 ${gap} 人这一窗口约不上</b>。缺口由中心负责人处理：分阶段排到下一个 30 天、加排班、转辅导员谈心或团体辅导，或继续等（负责老师按等待期限复核）。` : '，够用。'}</p>
         <div style="margin-top:8px;display:flex;gap:8px">${S.role === 'L3' && gap ? `<button class="btn sec xs" data-act="btab" data-arg="pool">去号池配置调额度</button>` : ''}<button class="btn sec xs" data-act="mo" data-arg="ivApp:">申请额度</button></div></div></div>
     <div class="card"><h3>名单<span class="sp"></span>${f ? `<button class="btn ghost xs" data-act="ivF" data-arg="">看全部</button>` : ''}${nNew ? `${tiers.map(t => `<button class="btn sec xs" data-act="mo" data-arg="ivSend:${t}">只发 ${t >= 4 ? '4 级及以上' : `${t} 级`}（${L.filter(x => x.st === 'new' && (t >= 4 ? x.lv >= 4 : x.lv === t)).length}）</button>`).join('')}<button class="btn pri xs" data-act="mo" data-arg="ivSend:all">发邀约卡（${nNew} 人）</button>` : ''}</h3>
       <table class="t"><tr><th>学生</th><th>等级</th><th>负责老师</th><th>状态</th><th>截止</th><th>预咨询</th></tr>${rows.map(x => { const s = SU(x.sid), it = x.ik, [t, cl] = IV_ST[x.st];
