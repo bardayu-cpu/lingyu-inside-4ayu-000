@@ -65,6 +65,7 @@ with sync_playwright() as p:
         chk(S.evaluate("S.bk===null && S.ivc.st==='entry'"),'R6 decline returns invited student to entry')
         chk(S.evaluate("S.ivc.edue==='10/20 18:00' && S.ivc.ik.st==='sent'"),'R6 deadline and intake retained')
         chk(A.evaluate("BOOK.find(b=>b.id==="+repr(bid)+").st")=='no','R6 declined application remains auditable')
+        chk(S.evaluate("S.info.body.includes('周五临时外出') && S.inbox[0].d[0].includes('周五临时外出')"),'Q15 actual reason and note in primary notification and inbox')
     r05()
     r06()
     chk(not errs,'browser errors: '+str(errs))
