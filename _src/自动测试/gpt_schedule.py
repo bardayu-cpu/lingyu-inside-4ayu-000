@@ -91,6 +91,13 @@ with sync_playwright() as p:
         chk(S.evaluate("S.bk.cid==='c2' && !S.bk.centerAdjusted && S.bk.st==='待确认'"),'Q03 leader reassigns replacement time awaiting confirmation')
     r06()
     q03()
+    def r16():
+        x=A.evaluate("(()=>{const before=schedWorkload('week').find(x=>x.cid==='c1').booked;BOOK.push({id:'next-week-load',cid:'c1',sid:CORE.lin.id,day:10,t:1,st:'ok',at:new Date(NOW)});const week=schedWorkload('week').find(x=>x.cid==='c1').booked,month=schedWorkload('month').find(x=>x.cid==='c1').booked;return {before,week,month}})()")
+        chk(x['week']==x['before'],'R16/Q11 next-week appointment excluded from this week')
+        chk(x['month']>x['week'],'R16/Q11 monthly workload includes future same-month appointments')
+        A.evaluate("enter('c1','L2','t');go('booking');S.tabs.booking='sched';render()")
+        chk('排班总时段' in A.inner_text('#pg'),'R16/Q11 workload exposes shift totals with correct period')
+    r16()
     chk(not errs,'browser errors: '+str(errs))
     print(f'gpt_schedule: {checks} passed')
     browser.close()

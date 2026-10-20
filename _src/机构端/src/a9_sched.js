@@ -60,3 +60,11 @@ function schedCloseRange(cid, range, type, reason) {
 }
 
 function schedCanPublish(cid, rows) { const closing = []; for (const [key, arr] of Object.entries(rows)) { const [m,d] = key.split('/').map(Number), date = new Date(NOW.getFullYear(),m-1,d), day = DXL.findIndex(x=>sameDay(x,date)); for (let t=0;t<arr.length;t++) { if (arr[t] === SCHM[cid][key][t]) continue; if (day >= 0 && slotConflict(cid,day,t)) return false; if (arr[t] === 'off') closing.push(slotKey(cid,date,TIMES[t])); } } return typeof ivCanCloseSlots !== 'function' || ivCanCloseSlots(closing); }
+function schedWorkload(period = 'week') {
+  const start = period === 'month' ? new Date(NOW.getFullYear(), NOW.getMonth(), 1) : monday(NOW); start.setHours(0, 0, 0, 0);
+  const end = new Date(start); if (period === 'month') end.setMonth(end.getMonth() + 1); else end.setDate(end.getDate() + 7);
+  const inPeriod = d => new Date(d) >= start && new Date(d) < end;
+  return SC.map(cid => { const slots = schedSlots().filter(x => x.cid === cid && inPeriod(x.date + 'T00:00:00') && x.st !== 'closed');
+    return { cid, total: slots.length, open: slots.filter(x => x.st === 'open').length, booked: BOOK.filter(b => b.cid === cid && bookOccupies(b) && b.st !== 'record' && inPeriod(DD(b.day))).length }; });
+}
+ACT.workPeriod = function (p) { if (['week', 'month'].includes(p)) S.tabs.workPeriod = p; };
