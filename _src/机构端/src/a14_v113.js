@@ -105,7 +105,7 @@ PAGES.settings = settings;
 /* ---------- 摘要：按表单显示；谁能看：接待老师、中心负责人、之后的负责咨询师；每次查看记入操作记录 ---------- */
 const ikRows = it => Array.isArray(it.sum) ? it.sum : it.sum ? [['topics', '想聊的话题'], ['trouble', '最困扰的事（原话）'], ['dur', '持续多久'], ['impact', '影响'], ['expect', '希望得到的帮助'], ['extra', '补充']].map(([k, name]) => ({ k, name, v: Array.isArray(it.sum[k]) ? it.sum[k].join('、') : it.sum[k] || '' })) : [];
 const ikMayView = b => { if (!b || isL1() || S.role === 'ADM') return false; const s = SU(b.sid); return S.role === 'L3' || me() === b.cid || (s && s.owner === me()); };
-intakeBox = function (b, wide) { const it = ikOf(b), s = SU(b.sid); if (!it || !it.sum || !ikMayView(b)) return '';
+intakeBox = function (b, wide) { const it = ikOf(b), s = SU(b.sid); if (!it || it.st === 'draft' || !it.sum || !ikMayView(b)) return '';
   const rows = ikRows(it), adds = it.adds || [];
   return `<div class="dbox ikbox"><b>${I('chat', 's')}预咨询摘要 · ${nm(s)}<span class="sp"></span><small class="note">学生 ${fmt(it.at)} 发送${it.ver > 1 ? ` · 第 ${it.ver} 版` : ''}${it.tk === 't2' ? ' · 模板二' : ''}${it.viewed ? ' · 已查看' : ''}</small></b>
     ${it.crisis ? `<p style="color:var(--crit);margin:6px 0 0">${I('alert', 's')} 学生在预咨询里提到了安全相关的内容，已立即按危机流程处理（不论是否发送摘要）</p>` : ''}

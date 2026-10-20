@@ -39,7 +39,7 @@ function fromStu(p, c) {
   c.done.filter(x => !p.done.includes(x)).forEach(x => ev.push({ t: 'done', core, task: x }));
   const da = p.decl || [], db = c.decl || []; db.filter(x => !da.includes(x)).forEach(x => ev.push({ t: 'decl', core, task: x, on: true })); da.filter(x => !db.includes(x)).forEach(x => ev.push({ t: 'decl', core, task: x, on: false }));
   const ia = a && a.intake, ib = b && b.intake;
-  if (ib && ib.st !== 'none' && (!ia || ia.st !== ib.st || ia.ver !== ib.ver)) ev.push({ t: 'intake', core, intake: ib });
+  if (ib && ['sent', 'skipped'].includes(ib.st) && (!ia || ia.st !== ib.st || ia.ver !== ib.ver)) ev.push({ t: 'intake', core, intake: ib });
   const ra = (p.inv || []), rb = (c.inv || []); rb.forEach(v => { const o = ra.find(x => x.id === v.id); if (v.rv > ((o && o.rv) || 0)) ev.push({ t: 'invReply', core, id: v.id, r: v.r, slots: v.slots, why: v.why, ver: v.ver }); });
   return ev;
 }

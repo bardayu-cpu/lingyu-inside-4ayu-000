@@ -81,7 +81,7 @@ Object.assign(ACT, {
 /* ---------- 2. 所有预约都要老师确认 ---------- */
 if (!RULES.allConfirm) { BOOK.forEach(b => { b.fresh = false; }); RULES.allConfirm = 1; }
 if (typeof LY_in === 'function') {
-  const _lyIn19 = LY_in; LY_in = function (ev) { if (ev.t !== 'book') return _lyIn19(ev);
+  const _lyIn19 = LY_in; LY_in = function (ev) { if (ev.t === 'intake' && (!ev.intake || !['sent', 'skipped'].includes(ev.intake.st))) return ''; if (ev.t !== 'book') return _lyIn19(ev);
     const r = _lyIn19(ev), s = LY_CORE()[ev.core], b = s && lyBook(s); if (!b) return r;
     if (b.st === 'ok' && b.fresh) { b.st = 'confirm'; b.fresh = false; if (S.uid) render(); }
     if (ev.inv) b.src = '主动邀约';
@@ -174,9 +174,11 @@ const bkInv = () => { const B = ivb(), L = ivMine(), c = ivCnt(L), P = poolN(), 
         return `<tr><td><b>${nm(s)}</b><small>${s.college}</small></td><td>${lvV(s)}</td><td>${ST(x.resp).name}</td><td><span class="pill ${cl}">${t}</span></td><td>${x.st === 'entry' ? `入口 ${x.edue}` : x.st === 'sent' ? `回复 ${x.due}` : '—'}</td><td>${it && it.sum ? `<button class="lnk" data-act="mo" data-arg="ivIk:${x.sid}">${I('chat', 's')}看摘要</button>` : it ? `<span class="note">${{ skipped: '跳过了', draft: '已保存，未发送' }[it.st] || '—'}</span>` : '—'}</td></tr>`; }).join('') || '<tr><td colspan="6" class="note">没有符合的学生</td></tr>'}</table>
       <p class="note">顺序：先按等级分档（4 级及以上一档、3 级一档），同档按普测完成时间。邀约卡 48 小时有效，人工入口 48 小时内要提交申请；到期没处理的回到负责老师那里，由老师决定是否再发。</p></div>`; };
 
+/* R4：未发送草稿不进入机构端个案数据；清理旧演示版本已泄露的草稿。 */
+BOOK.forEach(b => { if (b.intake && b.intake.st === 'draft') b.intake = { st: 'none', ver: 0 }; });
 /* AI 预咨询：摘要 + 题库配置 */
 const aiRows = () => { const R = [];
-  BOOK.filter(b => b.intake && b.intake.st && b.intake.st !== 'none' && ['confirm', 'ok', 'change', 'record', 'pool', 'done'].includes(b.st) && ikMayView(b)).forEach(b => R.push({ sid: b.sid, src: b.src === '主动邀约' ? '主动邀约' : '自己约普通号', it: b.intake, b, booked: true }));
+  BOOK.filter(b => b.intake && b.intake.st && ['sent', 'skipped'].includes(b.intake.st) && ['confirm', 'ok', 'change', 'record', 'pool', 'done'].includes(b.st) && ikMayView(b)).forEach(b => R.push({ sid: b.sid, src: b.src === '主动邀约' ? '主动邀约' : '自己约普通号', it: b.intake, b, booked: true }));
   ivMine().filter(x => x.ik && !x.bid).forEach(x => R.push({ sid: x.sid, src: '主动邀约', it: x.ik, booked: false }));
   return R; };
 const bkAi = () => { const sub = S.tabs.aisub || 'sum';
