@@ -21,7 +21,12 @@ with sync_playwright() as p:
     chk(S.evaluate("IK_CFG && IK_CFG.ver") == 1, 'normal bank untouched')
     S.evaluate("reset('A');prepare('home');render();ACT.zIvc();ACT.ivAcc();render()"); W()
     chk(S.evaluate("S.ik.qs.length") == 7, 'student uses new high-risk bank')
-    S.evaluate("ACT.zIk();ACT.ikSendSum();render()"); S.evaluate("ACT.pickSlot('c1:0:1');ACT.bookSubmit();render()"); W()
+    S.evaluate("ACT.zIk();ACT.ikSendSum();render()"); W()
+    # Pick an actual offered slot; the former fixture is already occupied by another demo student.
+    arg = S.evaluate("""(()=>{const k=S._slotAllowed.find(k=>k.startsWith('c1|'));
+      if(!k) throw new Error('No real c1 invitation slot offered');
+      const [cid,date,time]=k.split('|');return cid+':'+DAYS.findIndex(d=>d.toISOString().slice(0,10)===date)+':'+DATA.times.indexOf(time);})()""")
+    S.evaluate("arg=>{ACT.pickSlot(arg);ACT.bookSubmit();render()}", arg); W()
     x = A.evaluate("(()=>{const b=BOOK.find(b=>b.sid===CORE.lin.id&&b.st==='confirm');return b&&{id:b.id,src:b.src,ik:b.intake&&b.intake.st}})()")
     chk(x and x['src'] == '主动邀约' and x['ik'] == 'sent', f'invite request reaches admin with intake {x}')
     A.evaluate(f"enter('c1','L2','t');go('booking');render()"); W(); chk('主动邀约' in A.inner_text('#pg') and '待确认申请' in A.inner_text('#pg'), 'shows in pinned list')

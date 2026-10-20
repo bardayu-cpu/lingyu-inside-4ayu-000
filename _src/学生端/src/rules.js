@@ -52,10 +52,11 @@ function slotState(ci, di, ti) {
     if (!DAYS[di] || !DATA.times[ti]) return 'closed';
     const date = new Date(DAYS[di]), cid = DATA.counsellors[ci] && DATA.counsellors[ci].id, key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     const slot = S._schedSnapshot.find(x => x.cid === cid && x.date === key && x.time === DATA.times[ti]);
-    if (!slot || slot.st === 'closed' || S._slotAllowed && !S._slotAllowed.includes(slot.key)) return 'closed';
+    if (!slot || slot.st === 'closed') return 'closed';
     const [h,m] = DATA.times[ti].split(':'); date.setHours(+h,+m,0,0);
     if (date - NOW < 24 * 3600e3) return 'early';
-    return slot.st === 'open' ? 'open' : 'taken';
+    if (slot.st !== 'open') return 'taken';
+    return S._slotAllowed && !S._slotAllowed.includes(slot.key) ? 'closed' : 'open';
   }
   if ((di * 5 + 2) % 7 === 0 || (ci + di) % 4 === 3) return 'closed';           // 有些日子老师不排班
   const open = (ci * 3 + di * 2 + ti) % 3 !== 0;

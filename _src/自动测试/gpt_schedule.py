@@ -19,7 +19,7 @@ with sync_playwright() as p:
     pg.fill('#nm','排班回归');pg.click('[data-do=nameOk]')
     fr=lambda t: next(f for f in pg.frames if f.parent_frame and f.frame_element().get_attribute('title')==t)
     A,S=fr('机构端'),fr('学生端')
-    A.evaluate("enter('c5','L3','t');go('booking');render()")
+    A.evaluate("enter('c5','L3','t');RULES.pool.inv=0;RULES.pool.hold=0;ivb().list=[];go('booking');render()")
     def wait():pg.wait_for_timeout(200)
     def q01():
         r=A.evaluate("""(()=>{const day=3,t=3,cid='c1'; BOOK.filter(b=>b.cid===cid&&b.day===day&&b.t===t).forEach(b=>b.st='cancelled'); setSlot(cid,day,t,'open'); SCHM[cid][dkey(DD(day))][t]='open'; const event={t:'book',core:'lin',cid,date:DD(day).toISOString(),ti:t}; LY_in(event); const a=lyBook(CORE.lin); const n=BOOK.length; LY_in({...event,core:'chen'}); const collision=BOOK.slice(n).some(b=>b.sid===CORE.chen.id); const dup={id:'dup',sid:CORE.wang.id,cid,day,t,st:'confirm',at:new Date(NOW)}; BOOK.push(dup); ACT.bOk('dup'); return {collision,a:a&&a.st,duplicate:dup.st,reject:!!RULES.bookReject.chen};})()""")
@@ -56,23 +56,24 @@ with sync_playwright() as p:
     def r06():
         S.evaluate("reset('B');prepare('home');S.bk=null;render()")
         wait()
-        A.evaluate("BOOK.filter(b=>b.sid===CORE.chen.id).forEach(b=>b.st='cancelled');setSlot('c1',5,2,'open');render()")
+        # Use a server-issued invitation with a stable ID; forged local-only cards are now rejected.
+        A.evaluate("BOOK.filter(b=>b.sid===CORE.chen.id).forEach(b=>b.st='cancelled');RULES.pool.inv=100;RULES.pool.hold=0;setSlot('c1',5,2,'open');ivb().list=[{id:'schedule-chen',sid:CORE.chen.id,lv:4,resp:'c1',st:'queue',ik:{st:'sent',at:new Date(NOW),ver:1,sum:[{name:'诉求',v:'想聊聊'}]}}];render()")
         wait()
-        S.evaluate("S.ivc={st:'sub',edue:'10/20 18:00',entryUntil:'2026-10-20T18:00:00',ik:{st:'sent',sum:[{name:'诉求',v:'想聊聊'}]}};S.bk={cid:'c1',di:4,ti:2,st:'待确认',kind:'预咨询',mode:'线下',topics:[],inv:true,intake:S.ivc.ik};render()")
+        arg=S.evaluate("(()=>{const [cid,date,time]=S._slotAllowed.find(k=>k.startsWith('c1|')).split('|');return cid+':'+DAYS.findIndex(d=>d.toISOString().slice(0,10)===date)+':'+DATA.times.indexOf(time)})()")
+        S.evaluate("arg=>{ACT.pickSlot(arg);ACT.bookSubmit();render()}",arg)
         wait()
-        # Student date index 3 is institution date index 4.
         bid=A.evaluate("lyBook(CORE.chen).id")
         A.evaluate("S.form={why:'时段冲突',note:'周五临时外出'};ACT.bNoOk("+repr(bid)+");render()")
         wait()
         chk(S.evaluate("S.bk===null && S.ivc.st==='entry'"),'R6 decline returns invited student to entry')
-        chk(S.evaluate("S.ivc.edue==='10/20 18:00' && S.ivc.ik.st==='sent'"),'R6 deadline and intake retained')
+        chk(S.evaluate("new Date(S.ivc.entryUntil)>NOW && S.ivc.ik.st==='sent'"),'R6 valid renewed deadline and intake retained')
         chk(A.evaluate("BOOK.find(b=>b.id==="+repr(bid)+").st")=='no','R6 declined application remains auditable')
         chk(S.evaluate("S.info.body.includes('周五临时外出') && S.inbox[0].d[0].includes('周五临时外出')"),'Q15 actual reason and note in primary notification and inbox')
     r05()
     def q03():
         S.evaluate("reset('A');prepare('home');S.bk=null;render()")
         wait()
-        A.evaluate("BOOK.filter(b=>b.sid===CORE.lin.id).forEach(b=>b.st='cancelled');setSlot('c1',7,1,'open');render()")
+        A.evaluate("BOOK.filter(b=>b.sid===CORE.lin.id).forEach(b=>b.st='cancelled');ivb().list=[];RULES.pool.inv=0;setSlot('c1',7,1,'open');render()")
         wait()
         S.evaluate("S.bk={cid:'c1',di:6,ti:1,st:'待确认',kind:'预咨询',mode:'线下',topics:[]};render()")
         wait()
