@@ -4,6 +4,7 @@
 
 - 目标仓库：`bardayu-cpu/lingyu-inside-4ayu-000`（内测版）
 - 分支：`gpt-fix`
+- [打开完整演示](https://raw.githack.com/bardayu-cpu/lingyu-inside-4ayu-000/gpt-fix/index.html)（首次如显示来源提示，点击 **Open the page**）
 - 完整源码：[`_src/`](./_src/)
 - [逐项修复与验证说明](./_src/修复交付-v1.19.2-gpt.md)
 - [验证日志与截图](./_src/验证记录/)
