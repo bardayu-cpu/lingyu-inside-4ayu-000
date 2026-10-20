@@ -267,8 +267,7 @@ const _md19 = modal; modal = function () { const [k, id] = (S.mo || '').split(':
         : `<div class="dbox"><p style="margin:0">上传 Excel 或 CSV，第一列是学号。演示里没有真的上传，用「粘贴学号」试一样的核对。</p></div>`), '核对并加入', 'ivAddGo', '', true); }
   if (k === 'ivRes') { const r = S.ivRes || { in: [], bad: [], skip: [], has: [] };
     return mbox('核对结果', '', [['进入批次', r.in], ['对不上', r.bad], ['不走预约队列', r.skip], ['已有安排', r.has]].map(([n, L]) => `<div class="kv"><span>${n}（${L.length}）</span><b>${L.join('、') || '—'}</b></div>`).join(''), '', '', ''); }
-  if (k === 'ivIk') { const x = ivb().list.find(v => v.sid === id), s = SU(id), it = x && x.ik; if (!it || !it.sum) return _md19();
-    if (!it.seen) { it.seen = 1; it.viewed = true; log('查看预咨询摘要（主动邀约）', s, { cat: '查看', noTl: 1 }); }
+  if (k === 'ivIk') { const x = ivMine().find(v => v.sid === id), s = SU(id), it = x && x.ik; if (!it || !it.sum) return _md19();
     return mbox(`预咨询摘要 · ${nm(s)}`, `学生 ${fmt(new Date(it.at))} 发送 · 高危咨询题库`, `<div class="ikform2">${it.sum.map(r => `<div class="${(r.v || '').length > 24 || r.k === 'trouble' ? 'w' : ''}"><label>${esc(r.name)}</label><p>${r.v ? (r.k === 'trouble' ? `「${esc(r.v)}」` : esc(r.v)) : '<span class="note">学生跳过了</span>'}</p></div>`).join('')}</div><p class="note">由预咨询小屿整理、学生本人确认后发送；只收集信息，不评分，不改变等级。每次查看都记入操作记录。</p>`, '', '', '', true); }
   if (k === 'schedReg') return mbox('改班和停诊登记', '登记后中心负责人会收到通知。', fld('老师', `<div class="opts">${['c1', 'c2', 'c3', 'c4', 'c5'].filter(c => S.role === 'L3' || c === me()).map(c => `<button class="${F.rgc === c ? 'on' : ''}" data-act="fset" data-arg="rgc|${c}">${ST(c).name}</button>`).join('')}</div>`) + fld('类型', `<div class="opts">${['改班', '病假停诊', '计划性关时段'].map(t => `<button class="${F.rgt === t ? 'on' : ''}" data-act="fset" data-arg="rgt|${t}">${t}</button>`).join('')}</div>`) + fld('日期', `<input class="in" style="width:200px" data-bind="form.rgd" value="${esc(F.rgd || '')}" placeholder="例如 10/23 下午">`) + fld('说明（可不写）', `<input class="in" data-bind="form.rgw" value="${esc(F.rgw || '')}">`), '登记', 'schedRegGo', '');
   return _md19(); };
@@ -283,3 +282,11 @@ const _setTab19 = ACT.setTab; ACT.setTab = function (k) { if (k === 'duty') { if
 const _data19 = data; data = function () { return _data19().replace('值班按「成员管理 · 值班表」统计，咨询排班等预约那一版加上。', '值班按「预约咨询 · 排班表」里的值班表统计。'); };
 PAGES.data = data;
 ivb();
+
+/* R17：每次用户打开摘要写一次审计；重复渲染不再写审计。 */
+const _moSummaryAudit19 = ACT.mo; ACT.mo = function (arg) { const [kind, id] = String(arg || '').split(':'); let student = null, intake = null;
+  if (kind === 'ivIk') { const x = ivMine().find(v => v.sid === id); intake = x && x.ik; student = x && SU(x.sid); if (!student || !intake || intake.st !== 'sent' || !intake.sum) return toast('没有权限查看这份摘要'); }
+  if (kind === 'intake') { const b = BOOK.find(v => v.id === id); intake = b && ikOf(b); student = b && SU(b.sid); if (!b || !ikMayView(b) || !intake || intake.st !== 'sent' || !intake.sum) return toast('没有权限查看这份摘要'); }
+  const result = _moSummaryAudit19.apply(this, arguments);
+  if (student && S.mo === arg) { intake.viewed = true; log(kind === 'ivIk' ? '查看预咨询摘要（主动邀约）' : '查看预咨询摘要', student, { cat: '查看', noTl: 1 }); }
+  return result; };

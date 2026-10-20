@@ -113,9 +113,8 @@ intakeBox = function (b, wide) { const it = ikOf(b), s = SU(b.sid); if (!it || i
     <div class="ikform2">${rows.map(x => `<div class="${x.k === 'trouble' || x.k === 'extra' || (x.v || '').length > 24 ? 'w' : ''}"><label>${esc(x.name)}</label><p>${x.v ? (x.k === 'trouble' ? `「${esc(x.v)}」` : esc(x.v).replace(/\n/g, '<br>')) : '<span class="note">学生跳过了</span>'}</p></div>`).join('')}</div>
     ${adds.length ? `<div class="ikadds"><label>学生追加的补充</label>${adds.map(a => `<p><small class="note">${fmt(new Date(a.at))}</small> ${esc(a.t)}</p>`).join('')}</div>` : ''}
     <p class="note" style="margin:6px 0 0">由预咨询小屿整理、学生本人确认后发送；只收集信息，不评分，不改变等级。能看到的人：接待老师、中心负责人、之后负责的咨询师；辅导员看不到。每次查看都记入操作记录。</p></div>`; };
-const _mv12 = markViewed; markViewed = b => { const it = ikOf(b); if (!it || !it.sum || !ikMayView(b)) return; const k = `${me()}|${it.ver}`; it.seen = it.seen || {};
-  if (!it.seen[k]) { it.seen[k] = 1; if (!(it.st === 'sent' && !it.viewed && me() === b.cid)) log('查看预咨询摘要', SU(b.sid), { cat: '查看', noTl: 1 }); }
-  _mv12(b); };
+/* 渲染只更新已读状态；审计由实际打开动作记录，避免重绘重复或后续查看漏记。 */
+markViewed = b => { const it = ikOf(b); if (!it || it.st !== 'sent' || !it.sum || !ikMayView(b)) return; it.viewed = true; };
 /* 预约改给别的老师（改派、待办池指派）：摘要跟着预约走，新老师的「已查看」重新计算 */
 ['assignBOk'].forEach(n => { if (!ACT[n]) return; const f = ACT[n]; ACT[n] = function (id) { const b = BOOK.find(x => x.id === id), c0 = b && b.cid; const r = f.apply(this, arguments); if (b && b.cid !== c0 && b.intake) { b.intake.viewed = false; } return r; }; });
 /* 老师对「新预约」做了任何处理（改约、婉拒）也算看过 */

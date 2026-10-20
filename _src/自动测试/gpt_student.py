@@ -140,6 +140,22 @@ with sync_playwright() as p:
                 page.locator('[data-act=inviteGo]').click()
                 chk(E('S.page') == 'book' and E('S.modal') is None, f'screening level {level} accept opens booking')
 
+    if want('R17'):
+        page.goto(Path(os.environ['ADM_HTML']).as_uri())
+        E("enter('c5','L3');go('booking');S.tabs.booking='ai';render()")
+        ids = E("({iv:ivMine().find(x=>x.ik&&x.ik.st==='sent'&&x.ik.sum).sid,book:BOOK.find(x=>x.intake&&x.intake.st==='sent'&&x.intake.sum).id})")
+        for arg in ['ivIk:' + ids['iv'], 'intake:' + ids['book']]:
+            before = E("AUDIT.filter(x=>x.t.startsWith('查看预咨询摘要')).length")
+            for _ in range(2):
+                E('(a=>{ACT.mo(a);render()})', arg)
+                E('render();render()')
+                E('ACT.moClose();render()')
+            chk(E("AUDIT.filter(x=>x.t.startsWith('查看预咨询摘要')).length") == before + 2, 'R17 each open audits once, redraw does not: ' + arg)
+        E("enter('a1','ADM');go('home');render()")
+        before = E('AUDIT.length')
+        E('(a=>{ACT.mo(a);render()})', 'ivIk:' + ids['iv'])
+        chk(E('S.mo') is None and E('AUDIT.length') == before, 'R17 administrator cannot invoke invitation summary action')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 
