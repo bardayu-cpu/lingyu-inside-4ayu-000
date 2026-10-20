@@ -261,6 +261,10 @@ Object.assign(ACT, {
     notify('c5', '站内 + 短信', `${ST(F.rgc).name} 登记了${F.rgt}：${F.rgd.trim()}${result ? `；${result.affected} 个预约待重新安排` : ''}`, null); S.mo = null; toast(result ? '已关闭时段，受影响预约进入中心调整，并已通知中心负责人' : '已登记，中心负责人会收到通知'); },
   ivPickT(id) { const L = S.form.ivPick = S.form.ivPick || []; const i = L.indexOf(id); if (i >= 0) L.splice(i, 1); else L.push(id); } });
 const _md19 = modal; modal = function () { const [k, id] = (S.mo || '').split(':'), F = S.form;
+  if (k === 'dutyReadOnly') {
+    if (!S.uid || S.role !== 'ADM') return '';
+    return mbox('值班表（只读）', '系统管理员可以查看值班安排；调整值班由心理中心负责人处理。', `<table class="t"><tr><th>周次</th><th>值班咨询师</th><th>未确认时的通知安排</th></tr>${DUTY.map(d => `<tr><td>${esc(d.wk)}</td><td>${esc(ST(d.who).name)}</td><td>紧急报告 ${RULES.urgentMin} 分钟、一般报告 ${RULES.esc} 小时未确认，通知中心负责人；后续按规定升级。</td></tr>`).join('')}</table>`, '', '', '');
+  }
   if (k === 'ivSend') { const L = ivMine().filter(x => x.st === 'new' && (id === 'all' || (+id >= 4 ? x.lv >= 4 : x.lv === +id))), P = poolN(), q = Math.max(0, P.can - ivMine().filter(x => ['entry', 'sub', 'ok'].includes(x.st)).length);
     return mbox(`发邀约卡 · ${L.length} 人`, '确认后才发。学生收到的卡上不写原因、等级和「普测筛出」。', `<div class="dbox"><p style="margin:0">「心理中心邀请你聊一聊。接受后，小屿会先花 3 分钟了解一下你最近的情况，然后你可以自己选和老师见面的时间。请在 ${ivDue(2)} 前回复。」<br>[接受] [这次不参加]</p></div><p class="note">按现在的号，接受的人里大约前 ${q} 位能很快拿到人工入口，其余要排队。邀约卡不占号，24 小时提醒一次。</p>`, '确认发送', 'ivSendGo', id); }
   if (k === 'ivApp') return mbox('申请额度', '发给中心负责人，在「号池配置 · 申请卡」里处理。', fld('学院', `<div class="opts">${COLLEGES.map(c => `<button class="${F.apc === c ? 'on' : ''}" data-act="fset" data-arg="apc|${c}">${c}</button>`).join('')}</div>`) + fld('要多少个号', `<input class="in" type="number" min="1" style="width:100px" data-bind="form.apn" value="${esc(F.apn || '')}">`) + fld('为什么', `<textarea data-bind="form.apw" rows="2" placeholder="例如：名单里等着的人多，本周已排满">${esc(F.apw || '')}</textarea>`), '提交', 'ivAppGo', '');
@@ -282,7 +286,7 @@ const _st19 = settings; settings = function () { let h = _st19();
   if (S.tabs.settings === 'cwords') { const t = h.indexOf('<div class="tabs">'), e = h.indexOf('</div>', t) + 6; h = h.slice(0, e) + cwPage19() + '</div>'; }
   return h.replace('预咨询的设置暂时放在这里，预约咨询那一版会挪到「预约咨询 · AI 预咨询」。', '这里只设置预咨询放在预约的哪一步、是否启用模板二。题目和开场白在「预约咨询 · AI 预咨询 · 题库配置」里。'); };
 PAGES.settings = settings;
-const _setTab19 = ACT.setTab; ACT.setTab = function (k) { if (k === 'duty') { if (S.role === 'ADM') return toast('值班表在「预约咨询 · 排班表」里，由心理中心维护'); go('booking'); S.tabs.booking = 'sched'; return; } return _setTab19.apply(this, arguments); };
+const _setTab19 = ACT.setTab; ACT.setTab = function (k) { if (k === 'duty') { if (S.role === 'ADM') { S.dw = null; S.mo = 'dutyReadOnly:'; log('查看值班表（只读）', null, { cat: '查看', obj: '值班表' }); return; } go('booking'); S.tabs.booking = 'sched'; return; } return _setTab19.apply(this, arguments); };
 const _data19 = data; data = function () { return _data19().replace('值班按「成员管理 · 值班表」统计，咨询排班等预约那一版加上。', '值班按「预约咨询 · 排班表」里的值班表统计。'); };
 PAGES.data = data;
 ivb();
