@@ -8,6 +8,8 @@ function ivBump(x) { x.sv = (x.sv || 1) + 1; }
 /* R7：以实际日期时段算容量，并用一对一匹配持续保护每个人工入口。 */
 function ivRawSlots() { return schedSlots().filter(s => { const t = new Date(`${s.date}T${s.time}:00`); return s.st === 'open' && t - NOW >= 24 * H && t - NOW <= 30 * 24 * H; }); }
 function ivEntries() { return ivIdentity().list.filter(x => x.st === 'entry'); }
+/* R9：按 6.4，邀约卡不扣额度；学院额度约束人工入口分配。 */
+function ivCollegeUsed(college) { return ivb().list.filter(x => SU(x.sid).college === college && ['entry','sub','ok','adjust'].includes(x.st)).length; }
 function ivPool() {
   const P = RULES.pool, slots = ivRawSlots(), entries = ivEntries(), held = new Set(entries.map(x => x.holdKey).filter(Boolean));
   const map = RULES.slotPool = RULES.slotPool || {}, free = slots.filter(s => !held.has(s.key));
@@ -38,10 +40,15 @@ function ivAllocate() {
   entries.forEach(x => { if (!x.entryUntil) x.entryUntil = new Date(+NOW+48*H).toISOString(); });
   const existing = ivMatch(entries,P.invite); if (existing) entries.forEach(x=>{ x.holdKey=existing[x.id]; });
   const sorted = B.list.filter(x => x.st === 'queue' && !x.demoQueue).sort((a,b) => (b.lv >= 4) - (a.lv >= 4) || (b.priorityReturn || 0) - (a.priorityReturn || 0) || new Date(SU(a.sid).done || a.readyAt || NOW) - new Date(SU(b.sid).done || b.readyAt || NOW));
-  for (const x of sorted) { const trial = Object.assign({},x,{entryUntil:new Date(+NOW+48*H).toISOString()});
+  for (const x of sorted) {
+    const col=SU(x.sid).college, limit=RULES.pool.col[col];
+    if (limit !== undefined && ivCollegeUsed(col)>=limit) { x.waitReason='学院额度已用完，等待中心调整'; continue; }
+    x.waitReason='';
+    const trial = Object.assign({},x,{entryUntil:new Date(+NOW+48*H).toISOString()});
     const matched = ivMatch([...entries,trial],P.invite); if (!matched) break;
     Object.assign(x,{st:'entry',entryUntil:trial.entryUntil,edue:ivDue(2)}); entries.push(x); ivBump(x);
     entries.forEach(e => { e.holdKey = matched[e.id]; });
+    log('主动邀约 · 开放人工预约入口，保留可约时段',SU(x.sid),{cat:'预约',obj:'主动邀约',sys:1});
   }
 }
 function ivSlotAllowed(sid,cid,date,time,excludeBid,sharedPool) {
