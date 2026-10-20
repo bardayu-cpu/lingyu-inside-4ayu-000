@@ -6,7 +6,7 @@
 ===================================================================== */
 Object.assign(RULES, { intakeMode: 'A', intakeBrief: '关闭', l1Scope: '本学院' });
 RULES.l1Cols = { u1: COLLEGES.filter(c => FOLLOWER_OF[c] === 'u1'), u2: COLLEGES.filter(c => FOLLOWER_OF[c] === 'u2') };
-const IKM = { A: 'A · 预约成功之后（推荐）', B: 'B · 选好时段后、提交前', C: 'C · 关闭' };
+const IKM = { A: 'A · 预约申请提交后（推荐）', B: 'B · 选好时段后、提交前', C: 'C · 关闭' };
 const isCenter = () => ['L2', 'L3'].includes(S.role);
 
 /* ---------- 1. 预咨询摘要 ---------- */
@@ -183,7 +183,7 @@ const _md12 = modal; modal = function () {
 function remindList() { const f = S.f; return PENDING.filter(x => (!f.rst || (x.st === '未开始' ? '未打开' : '已打开未完成') === f.rst) && (!f.rcol || x.college === f.rcol) && (!f.rch || x.via === f.rch)); }
 const _st12 = settings; settings = function () { let h = _st12(); const tab = S.tabs.settings || 'tiers', ed = isAdm();
   if (false && h.includes('class="rules"') && h.includes('多久随访一次')) h = h.replace('<div class="grid g3" style="margin-top:16px">', `<div class="rule" style="margin-top:12px;border:1px solid var(--line2);border-radius:12px;padding:12px 14px"><span class="lv"><img src="${MASCOT_IK}" alt="" style="width:26px;height:26px;border-radius:8px;vertical-align:middle;margin-right:6px">预咨询小屿</span><p>学生<b>第一次预约</b>时，预咨询小屿用约 3 分钟帮他整理想聊的内容，学生确认后发给接待老师。放在哪一步：<select data-bind="intakeMode" data-rerender ${ed ? '' : 'disabled'}>${Object.entries(IKM).map(([v, n]) => `<option value="${v}" ${RULES.intakeMode === v ? 'selected' : ''}>${n}</option>`).join('')}</select></p>
-    <table class="t" style="margin-top:6px"><tr><th>选项</th><th>好处</th><th>风险</th></tr><tr class="${RULES.intakeMode === 'A' ? 'sel' : ''}"><td>A · 提交预约后</td><td>时段先锁住，不会被抢；不给求助增加门槛</td><td>学生可能跳过不聊，老师拿不到摘要</td></tr><tr class="${RULES.intakeMode === 'B' ? 'sel' : ''}"><td>B · 选好时段后、提交前</td><td>聊完才提交，摘要齐全；时段暂留 15 分钟，不会被抢</td><td>多一步，可能有学生聊到一半放弃；15 分钟后时段释放</td></tr><tr class="${RULES.intakeMode === 'C' ? 'sel' : ''}"><td>C · 关闭</td><td>流程最短</td><td>老师见面前对学生想聊什么一无所知</td></tr></table>
+    <table class="t" style="margin-top:6px"><tr><th>选项</th><th>好处</th><th>风险</th></tr><tr class="${RULES.intakeMode === 'A' ? 'sel' : ''}"><td>A · 预约申请提交后</td><td>时段先锁住，不会被抢；不给求助增加门槛</td><td>学生可能跳过不聊，老师拿不到摘要</td></tr><tr class="${RULES.intakeMode === 'B' ? 'sel' : ''}"><td>B · 选好时段后、提交前</td><td>聊完才提交，摘要齐全；时段暂留 15 分钟，不会被抢</td><td>多一步，可能有学生聊到一半放弃；15 分钟后时段释放</td></tr><tr class="${RULES.intakeMode === 'C' ? 'sel' : ''}"><td>C · 关闭</td><td>流程最短</td><td>老师见面前对学生想聊什么一无所知</td></tr></table>
     <p class="note">任何一种都可以跳过；对话里出现危机表达照危机流程处理。名单外或普测超过 3 个月的学生，另加 4 题简表：${`<select data-bind="intakeBrief" data-rerender ${ed ? '' : 'disabled'}>${['关闭', '开启'].map(v => `<option ${RULES.intakeBrief === v ? 'selected' : ''}>${v}</option>`).join('')}</select>`}（默认关闭）。</p></div><div class="grid g3" style="margin-top:16px">`);
   if (tab === 'map' && ed) h = h.replace(/(<div style="margin-top:10px"><button class="btn sec xs" data-act="mo" data-arg="import:map">)/, `<div class="card" style="margin-top:14px"><h3>辅导员的管理范围<span class="sp"></span><small>决定「学生工作」里谁能写、能看谁的谈心记录</small></h3>
     <p style="font-size:13.5px">辅导员可以管理：<select data-bind="l1Scope" data-rerender>${['本学院', '仅自己跟进的学生', '指定学院'].map(v => `<option ${RULES.l1Scope === v ? 'selected' : ''}>${v}${v === '本学院' ? '（默认）' : ''}</option>`).join('')}</select></p>

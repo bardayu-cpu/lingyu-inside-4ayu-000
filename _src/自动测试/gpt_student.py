@@ -92,6 +92,13 @@ with sync_playwright() as p:
         page.locator('[data-act=mo][data-arg="iktPrev:t1"]').click()
         chk('普通咨询 · 模板一' in page.locator('#modal').inner_text() and '这次先不用' in page.locator('#modal').inner_text(), 'Q13 normal-bank welcome preview retained')
 
+    if want('Q14'):
+        page.goto(Path(os.environ['ADM_HTML']).as_uri())
+        E("enter('a1','ADM');go('settings');S.tabs.settings='intake';render()")
+        text = page.locator('#app').inner_text()
+        chk('A · 预约申请提交后' in text and '预约成功之后' not in text, 'Q14 admin placement option and comparison table say request submitted')
+        chk(page.locator('[data-bind=intakeMode]').input_value() == 'A', 'Q14 placement default unchanged')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 
