@@ -53,7 +53,12 @@ const ikNeedT2 = () => ikCfg().t2on && (!!S.walkin || !ikPrev());
 /* 变量替换；某一句里的变量为空时整句去掉 */
 function ikFill(text) { const prev = ikPrev(), v = { 接待老师: LANG === 'en' ? (S.hold ? C(S.hold.pick.cid) : S.bk ? C(S.bk.cid) : null)?.name || 'your counsellor' : ikTeacher(), 上次聊到的话题: prev ? prev.map(T).join(L('、', ', ')) : '' };
   return (text || '').split(/(?<=[。！？.!?])\s*/).filter(s => !/\{(\w+|[一-龥]+)\}/.test(s) || [...s.matchAll(/\{([^}]+)\}/g)].every(m => v[m[1]])).map(s => s.replace(/\{([^}]+)\}/g, (_, k) => v[k] ?? '')).join(LANG === 'en' ? ' ' : ''); }
-const ikHas = ik => Object.values(ik.ans).some(v => v != null && (Array.isArray(v) ? v.length : String(v).trim()));
+/* 当前输入也属于草稿；关闭或倒计时保存不能只看已点「下一题」的答案。 */
+function ikDraftAnswers(ik) { const ans = { ...ik.ans }, q = ik.phase === 'q' && ik.qs[ik.i]; if (!q) return ans;
+  if (q.type === 'multi') { const own = (ik.own || '').split(/[、,，]\s*/).map(x => x.trim()).filter(Boolean); if ((ik.sel || []).length || own.length) ans[q.k] = [...(ik.sel || []), ...own]; }
+  else if (q.type === 'text') { const txt = (ik.txt || '').trim(); if (txt) ans[q.k] = ik.probe && ans[q.k] ? `${ans[q.k]}；${txt}` : txt; }
+  return ans; }
+const ikHas = ik => Object.values(ikDraftAnswers(ik)).some(v => v != null && (Array.isArray(v) ? v.length : String(v).trim()));
 const ikVal = (q, v) => v == null ? '' : Array.isArray(v) ? v.join('、') : String(v);
 
 /* ---------- 开始 / 继续 ---------- */
@@ -61,8 +66,12 @@ function ikStart(hold, resume) {
   const it = S.bk && S.bk.intake, keep = resume && it && it.qs ? it : null, tk = keep ? keep.tk : ikNeedT2() ? 't2' : 't1';
   const qs = keep ? keep.qs : JSON.parse(JSON.stringify(ikCfg()[tk]));
   S.ik = { tk, tv: keep ? keep.tv : ikCfg().ver, qs, i: 0, ans: keep ? { ...(keep.ans || {}) } : {}, probed: {}, probe: false, crisis: !!(it && it.crisis), crisisAt: -1, hold: !!hold, phase: 'q', sel: [], own: '' };
-  if (keep) { const n = qs.findIndex(q => S.ik.ans[q.k] == null); S.ik.i = n < 0 ? qs.length - 1 : n; }
-  ikLoad(); S.page = 'intake'; S.modal = null; S.pageTop = true;
+  const cursor = keep && keep.cursor;
+  if (cursor && cursor.i >= 0 && cursor.i < qs.length) S.ik.i = cursor.i;
+  else if (keep) { const n = qs.findIndex(q => S.ik.ans[q.k] == null); S.ik.i = n < 0 ? qs.length - 1 : n; }
+  ikLoad();
+  if (cursor) { Object.assign(S.ik, { probe: !!cursor.probe, probed: { ...(cursor.probed || {}) }, txt: cursor.txt || '', own: cursor.own || '', sel: (cursor.sel || []).slice() }); if (cursor.probe) S.ik.ans[qs[S.ik.i].k] = cursor.base; }
+  S.page = 'intake'; S.modal = null; S.pageTop = true;
 }
 /* 进入某一题时，把已有回答放进输入区 */
 function ikLoad() { const ik = S.ik, q = ik.qs[ik.i]; if (!q) return; const v = ik.ans[q.k];
@@ -80,8 +89,9 @@ function ikAnswer(v) { const ik = S.ik, q = ik.qs[ik.i];
 
 /* ---------- 完成 / 保存 / 不填 ---------- */
 function ikFinish(st) {
-  const ik = S.ik, sum = st === 'sent' || st === 'draft' ? ik.qs.map(q => ({ k: q.k, name: q.name, v: ik.phase === 'review' ? (S.ikS[q.k] || '').trim() : ikVal(q, ik.ans[q.k]) })) : null;
-  const prev = (S.bk && S.bk.intake) || {}, it = { st, at: new Date(NOW), sum: sum || prev.sum || null, crisis: ik.crisis || !!prev.crisis, ver: (prev.ver || 0) + 1, viewed: st === 'sent' ? false : !!prev.viewed, mode: IK_MODE, tk: ik.tk, tv: ik.tv, qs: ik.qs, ans: ik.ans, adds: prev.adds || [] };
+  const ik = S.ik, answers = st === 'draft' ? ikDraftAnswers(ik) : ik.ans, sum = st === 'sent' || st === 'draft' ? ik.qs.map(q => ({ k: q.k, name: q.name, v: ik.phase === 'review' ? (S.ikS[q.k] || '').trim() : ikVal(q, answers[q.k]) })) : null;
+  const prev = (S.bk && S.bk.intake) || {}, it = { st, at: new Date(NOW), sum: sum || prev.sum || null, crisis: ik.crisis || !!prev.crisis, ver: (prev.ver || 0) + 1, viewed: st === 'sent' ? false : !!prev.viewed, mode: IK_MODE, tk: ik.tk, tv: ik.tv, qs: ik.qs, ans: answers, adds: prev.adds || [] };
+  if (st === 'draft') it.cursor = { i: ik.i, probe: !!ik.probe, probed: { ...ik.probed }, txt: ik.txt || '', own: ik.own || '', sel: (ik.sel || []).slice(), base: ik.probe ? ik.ans[ik.qs[ik.i].k] : null };
   const topicsOf = () => { const t = ik.qs.find(q => q.useTopics); return t ? (Array.isArray(ik.ans[t.k]) ? ik.ans[t.k] : []).filter(x => DATA.topics.includes(x)) : []; };
   if (ik.hold) { const h = S.hold; S.pick = h.pick; S.form = h.form; S.bkNote = h.note; S.form.topics = [...new Set([...S.form.topics, ...topicsOf()])]; S._ikPass = true; ACT.bookSubmit(); S._ikPass = false; S.hold = null; }
   else if (S.bk) S.bk.topics = [...new Set([...S.bk.topics, ...topicsOf()])];
@@ -140,7 +150,7 @@ function ikReview() { const ik = S.ik;
     <label class="ikok"><input type="checkbox" ${S.ikOk ? 'checked' : ''} data-act="ikOkT"> ${L(`同意把这份摘要发给接待我的老师（${ikTeacher()}）`, `I agree to share this with my counsellor (${ikTeacher()})`)}</label>
     <div class="acts"><button class="btn ghost" data-act="ikBackQ">${I('left', 's')}${L('回到题目', 'Back to questions')}</button><span style="flex:1"></span><button class="btn sec" data-act="ikDraft">${L('先保存，不发送', 'Save, don’t send')}</button><button class="btn pri" data-act="ikSendSum" ${S.ikOk ? '' : 'disabled'}>${L('确认发给老师', 'Send to counsellor')}</button></div></div>`; }
 /* 中途关闭 */
-MODALS.ikClose = () => `<div class="mo l"><h3>${L('要先停在这里吗？', 'Stop here for now?')}</h3><p>${S.hold ? L('你的预约会先提交。已经回答的内容可以先保存，之后在「我的预约」里继续。', 'Your booking will be sent. You can save what you’ve answered and continue later from My appointments.') : L('已经回答的内容可以先保存，之后在「我的预约」里继续；也可以这次不填，不影响你的预约。', 'Save what you’ve answered and continue later from My appointments — or skip it this time. Your booking stands either way.')}</p>
+MODALS.ikClose = () => `<div class="mo l"><h3>${L('要先停在这里吗？', 'Stop here for now?')}</h3><p>${S.ik && S.ik.inv ? L('已经回答的内容可以先保存，之后在首页「和预咨询小屿聊聊」里接着聊；也可以这次不填，继续选和老师见面的时间。', 'Save your answers and continue from “Chat with Xiaoyu” on Home, or skip for now and continue to pick a time to meet.') : S.hold ? L('你的预约会先提交。已经回答的内容可以先保存，之后在「我的预约」里继续。', 'Your booking will be sent. You can save what you’ve answered and continue later from My appointments.') : L('已经回答的内容可以先保存，之后在「我的预约」里继续；也可以这次不填，不影响你的预约。', 'Save what you’ve answered and continue later from My appointments — or skip it this time. Your booking stands either way.')}</p>
   <div class="acts"><button class="btn ghost" data-act="close">${L('继续填写', 'Keep going')}</button><button class="btn sec" data-act="ikQuit">${L('这次不填了', 'Skip this time')}</button><button class="btn pri" data-act="ikSave">${L('先保存，稍后继续', 'Save and continue later')}</button></div></div>`;
 MODALS.ikWelcome = ikWelcome;
 
