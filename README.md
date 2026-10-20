@@ -1,12 +1,13 @@
 # 灵屿 2.0 · v1.19.2-gpt 审查分支
 
-本分支从 `forayu` 的 `1a1faced5509460310fbd9902703f34f5c4f0ea9` 创建，供逐项审查。`index.html` 是完整的双端演示，包含学生端、机构端、虚构数据及原有内联图片。
+本分支从 `bardayu-cpu/lingyu-demo-test-1` 仓库 `forayu` 的 `1a1faced5509460310fbd9902703f34f5c4f0ea9` 创建，供逐项审查。`index.html` 是完整的双端演示，包含学生端、机构端、虚构数据及原有内联图片。
 
+- 目标仓库：`bardayu-cpu/lingyu-inside-4ayu-000`（内测版）
 - 分支：`gpt-fix`
 - 完整源码：[`_src/`](./_src/)
 - [逐项修复与验证说明](./_src/修复交付-v1.19.2-gpt.md)
 - [验证日志与截图](./_src/验证记录/)
-- [与基线对比](https://github.com/bardayu-cpu/lingyu-demo-test-1/compare/forayu...gpt-fix)
+- [逐项修复提交](https://github.com/bardayu-cpu/lingyu-inside-4ayu-000/commits/gpt-fix/)
 
 ## 本机打开与构建
 
