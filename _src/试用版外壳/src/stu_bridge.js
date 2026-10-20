@@ -1,0 +1,24 @@
+/* 学生端 · 与机构端联动（只在合并试用版里生效） */
+const LY_SIDE = '学生端';
+const LY_CK = { A: 'lin', B: 'chen', C: 'huang', D: 'wang' };
+const lyIso = di => di == null || !DAYS[di] ? null : DAYS[di].toISOString();
+function LY_snap() { const b = S.bk, ts = S.tasks || []; S._ly = S._ly || Math.random().toString(36).slice(2);
+  return { inst: S._ly, scen: S.scen, core: LY_CK[S.scen], bk: b ? { cid: b.cid, date: lyIso(b.di), ti: b.ti, mode: b.mode, kind: b.kind, inv: !!b.inv, st: b.st, moved: !!b.moved, pend: b.pend ? { type: b.pend.type, date: lyIso(b.pend.di), ti: b.pend.ti } : null, intake: b.intake ? { st: b.intake.st, ver: b.intake.ver || 0, sum: b.intake.sum || null, crisis: !!b.intake.crisis, mode: b.intake.mode || IK_MODE, tk: b.intake.tk || 't1', tv: b.intake.tv || 1, adds: (b.intake.adds || []).map(a => ({ at: a.at, t: a.t })) } : null } : null,
+    cb: !!S.callback, crisis: ts.some(t => t.crisis) || !!(S.ik && S.ik.crisis), done: ts.filter(isDone).map(t => DATA_ZH.tasks.find(d => d.id === t.id).name), decl: ts.filter(t => t.declined).map(t => DATA_ZH.tasks.find(d => d.id === t.id).name), inv: (S.invs || []).map(v => ({ id: v.id, r: v.r, rv: v.rv, slots: v.slots, why: v.why })) }; }
+function LY_ctx() { return { 端: '学生端', 场景: SCENES[S.scen].name, 页面: ((typeof JUMPS !== 'undefined' && JUMPS.find(j => j[0] === S.page)) || [0, S.page])[1].replace(/^\d+b? /, ''), 弹窗: S.modal || '', 语言: LANG === 'en' ? 'English' : '中文' }; }
+function LY_in(ev) { const b = S.bk; let msg = '';
+  if (ev.t === 'confirm' && b && b.st === '待确认') { ACT.zConfirm(); msg = '学生端收到「老师已确认你的预约」'; }
+  else if (ev.t === 'decline' && b && !b.pend) { ACT.zDecline(); msg = '学生端收到「老师这次无法接待」'; }
+  else if (ev.t === 'agree' && b && b.pend) { ACT.zPend(); msg = '学生端收到「老师同意了你的申请」'; }
+  else if (ev.t === 'deny' && b && b.pend) { const ty = b.pend.type === 'cancel' ? '取消' : '改期'; b.pend = null;
+    addMsg('cal', [`你的${ty}申请未通过`, 'Your request was not approved'], ['原预约保持不变。', 'Your original appointment stays.'], 'mybook'); msg = `学生端收到「${ty}申请未通过」`; }
+  else if (ev.t === 'move' && b) { const di = DAYS.findIndex(d => d.toDateString() === new Date(ev.date).toDateString());
+    if (di >= 0) { const old = bkWhen(b); Object.assign(b, { di, ti: ev.ti, st: '已改约', moved: true, oldWhen: old });
+      addMsg('edit', [`${whoZ(b.cid)}调整了你的预约时间`, 'Your counsellor moved your appointment'], [`由 ${old} 改为 ${bkWhen(b)}。`, `New time: ${bkWhen(b)}.`], 'mybook'); S.modal = 'moved'; msg = '学生端收到「老师调整了预约时间」'; } }
+  else if (ev.t === 'intakeViewed' && b && b.intake) { b.intake.viewed = true; msg = '学生端：预咨询摘要显示「老师已查看」'; }
+  else if (ev.t === 'invSync') { const keep = new Set((ev.invs || []).map(v => v.id)); if (S.invs) { const gone = S.invs.filter(o => !keep.has(o.id)).map(o => 'inv:' + o.id); S.invs = S.invs.filter(o => keep.has(o.id)); S.inbox = S.inbox.filter(x => !gone.includes(x.link)); if (gone.includes('inv:' + S.inv) && S.modal === 'inv') S.modal = null; }   // 以机构端为准：机构端已经没有的邀约，学生端也删掉
+    (ev.invs || []).forEach(v => { const o = (S.invs || []).find(x => x.id === v.id); if (!o || o.st !== v.st || o.ver !== v.ver || o.start !== v.start) invUpd(v); }); msg = ''; }
+  else if (ev.t === 'invite' || ev.t === 'invUpd') { const o0 = (S.invs || []).find(x => x.id === ev.inv.id), same = o0 && o0.st === ev.inv.st && o0.start === ev.inv.start && o0.who === ev.inv.who; invUpd(ev.inv);
+    msg = same ? '' : o0 && o0.st === 'frozen' && ['wait', 'wait2', 'ok'].includes(ev.inv.st) ? '学生收到「约谈恢复了」' : o0 ? `学生收到邀约更新：${({ wait: '老师改了时间，请学生再确认', wait2: '老师给了新时间', cancel: '老师取消了', frozen: '约谈先暂停', ok: '时间调整', expired: '原定时间已过', done: '已经聊过', no: '学生说这次不用了', change: '等老师给新时间' })[ev.inv.st] || '有更新'}` : '学生收到「老师约你聊聊」'; }
+  else if (ev.t === 'cfg') { IK_MODE = ev.intakeMode; if (ev.ikt) IK_CFG = ev.ikt; if (ev.ikh) IK_CFG_H = ev.ikh; msg = ''; }
+  render(); return msg; }

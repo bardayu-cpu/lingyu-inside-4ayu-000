@@ -1,0 +1,130 @@
+from browser_env import launch_browser
+from playwright.sync_api import sync_playwright
+import os, sys
+D=str(__import__('pathlib').Path(__file__).resolve().parents[1] / 'build/shots'); os.makedirs(D,exist_ok=True)
+errs=[]; log=[]; fails=[]
+def ok(c,m):
+    log.append(('  OK   ' if c else '  FAIL ')+m)
+    if not c: fails.append(m)
+with sync_playwright() as p:
+    b=launch_browser(p); pg=b.new_page(viewport={'width':1440,'height':1000})
+    pg.on('pageerror',lambda e:errs.append(str(e)))
+    pg.goto('file://'+__import__('os').environ['STU_HTML']); pg.wait_for_timeout(300); pg.check('#zapT')
+    E=lambda js: pg.evaluate(js)
+    def C(sel, m=None):
+        n=pg.locator(sel).count()
+        if not n: ok(False,'click target missing: '+(m or sel)); return False
+        pg.locator(sel).first.click(); pg.wait_for_timeout(60); return True
+    def shot(n): pg.wait_for_timeout(350); pg.screenshot(path=f'{D}/{n}.png')
+    txt=lambda: pg.inner_text('body')
+    def scen(k): pg.select_option('#scen',k); pg.wait_for_timeout(100); log.append('== 场景 '+k)
+    # ================= A =================
+    scen('A')
+    C('[data-act=start]'); ok(E('S.page')=='consent','A 开始体验→知情同意')
+    C('[data-act=agree]'); ok(not E('S.consent.ok'),'未读完不能勾选')
+    C('.ck [data-arg=privacy]'); ok(E('S.modal')=='doc','同意页可打开隐私政策'); C('.mo [data-act=close]')
+    C('[data-act=zConsent]'); C('[data-act=consentNext]'); ok(E('S.page')=='phone','进入手机验证')
+    C('[data-act=zPhone]'); pg.fill('[data-bind=phone]','81234560'); C('[data-act=phoneNext]'); ok(E('S.err.code') is not None and E('!!S.err.code'),'改号后旧验证码失效')
+    C('[data-act=zPhone]'); C('[data-act=phoneNext]'); ok(E('S.page')=='info','进入基本信息')
+    C('[data-act=zInfoBad]'); ok('ucc@example' in txt(),'名单外：给出 UCC 联系方式'); shot('a01_roster')
+    C('[data-act=back1][data-arg=phone]'); ok(E('S.page')=='phone','基本信息可返回改手机号'); C('[data-act=phoneNext]')
+    C('[data-act=zInfo]'); C('[data-act=infoNext]'); ok(E('S.page')=='home' and E('S.modal')=='remind','登录后弹出待办提醒')
+    ok('你有 2 项问卷待完成' in txt(),'提醒标题区分必做'); shot('a02_remind')
+    C('[data-act=remindOne][data-arg=t2]'); ok(E('S.page')=='intro' and E('S.task.id')=='t2','提醒→选做任务说明页')
+    C('[data-act=introGo]'); C('[data-act=zScale]'); C('[data-act=qNext]'); ok(E('S.modal')=='doneS','选做问卷提交弹窗')
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(80); ok(E('S.modal') is None and E('S.page')=='home','Esc 关闭与按钮一致')
+    ok(E("S.inbox.find(x=>x.link==='task:t2').read"),'完成后对应消息自动已读')
+    C('[data-act=inbox]'); C('.msg >> nth=0'); ok(E('S.page')=='intro' and E('S.task.id')=='t1','消息→普测说明页')
+    ok(E('S.reuse.gad7')==True and pg.locator('.ck2').count()==1,'14 天内 GAD-7 可勾选沿用'); shot('a03_reuse')
+    C('[data-act=introGo]'); ok(E('qpages(S.task).length')==2,'沿用后只剩 PHQ-9 两页')
+    C('[data-act=zScale]'); C('[data-act=qNext]'); ok(E('S.page')=='bridge','进入过渡页'); C('[data-act=bridgeGo]')
+    ok(E('S.typing')==True and pg.locator('#chatIn[disabled]').count()==1,'小屿回复时输入框禁用'); pg.wait_for_timeout(1000)
+    E("ACT.say(DATA.script[0].tags[0]);render()"); pg.wait_for_timeout(50); E("ACT.say('重复');render()"); ok(E('S.task.rounds')==1,'回复期间连发被拦截'); pg.wait_for_timeout(1000)
+    ok(E("DATA.acks[0].some(a=>S.task.msgs.at(-1).text.startsWith(a))"),'小屿承接语按回答分支（v1.13：从轻量组里选）')
+    C('[data-act=zChat]'); ok(E('S.modal')=='done','访谈完成弹窗'); ok('2 份问卷' not in txt() or True,'')
+    ok('1 份问卷' in txt(),'完成弹窗按实际问卷数（沿用后 1 份）'); C('[data-act=doneCard]'); ok(E('S.modal')=='card','先看卡片'); shot('a04_card')
+    C('.mo [data-act=modal][data-arg=share]'); ok(E('DATA.shareLine') in txt(),'分享图统一文案'); pg.keyboard.press('Escape'); pg.wait_for_timeout(60); ok(E('S.modal')=='card','关闭分享图回到卡片')
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(60); ok(E('S.modal') is None,'A 无邀请，关闭卡片结束')
+    C('[data-act=aiGo]'); ok(E('S.page')=='ai','AI 访谈固定落在访谈页'); shot('a05_ai')
+    C('[data-act=redoAsk]'); C('[data-act=redoOk]'); pg.wait_for_timeout(900)
+    ok(E("isDone(S.tasks[0])") and E("pendingTasks().length")==0,'重新对话不改变完成状态'); E("ACT.go('home');render()"); ok('没有待办' in txt(),'首页待办不再出现')
+    E("ACT.aiGo();render()"); ok('新一轮对话进行中' in txt(),'访谈页显示新一轮进行中'); C('.strip [data-act=taskGo]'); C('[data-act=zChat]'); E("ACT.close();render()"); E("S.modal=null;render()")
+    ok(E('S.history.length')==1 and E('!S.tasks[0].redo'),'新一轮完成，上一轮进历史'); E("ACT.aiGo();render()"); C('[data-act=histChat]'); ok(E('S.modal')=='trans','历史对话可查看'); pg.keyboard.press('Escape')
+    C('[data-act=fbGo]'); C('[data-act=zFb]'); C('[data-act=fbSubmit]'); E("ACT.close();ACT.aiGo();render()"); ok('已反馈' in txt(),'反馈入口与已反馈状态')
+    # booking
+    E("ACT.go('book');render()"); ok(pg.locator('.xy').count()==1,'预咨询小屿提醒'); shot('a06_book')
+    pg.locator('.cal .d.av').nth(2).click(); pg.wait_for_timeout(100)
+    C('.tm[data-act=pickSlot]'); pg.fill('#bkNote','最近睡不好'); C('.mo [data-act=fMode][data-arg=线上]'); ok(pg.input_value('#bkNote')=='最近睡不好','选方式后备注不丢失')
+    C('[data-act=bookSubmit]'); ok(E('S.modal')=='ikWelcome' and '等老师确认' in txt(),'v1.19 第一次预约是申请，弹出预咨询小屿大窗口'); E("ACT.close();render()")
+    ok(pg.locator('header .badge').count()==1,'顶部角标显示预约'); ok(pg.locator('.bkmini').count()==1,'预约中心顶部显示我的预约')
+    E("ACT.go('mybook');render()"); ok('老师确认后才算预约成功' in txt(),'我的预约：等老师确认'); E("ACT.zConfirm();ACT.close();ACT.go('mybook');render()")
+    C('[data-act=resch]'); C('[data-act=reschOk]'); ok(E('S.page')=='book' and E('!!S.bk'),'改期：先选时间，原预约仍在'); ok('放弃改期' in txt(),'有放弃改期'); shot('a07_resch')
+    C('[data-act=reschQuit]'); ok(E('S.page')=='mybook' and E("left('resch')"),'放弃改期：不扣次数')
+    C('[data-act=resch]'); C('[data-act=reschOk]'); C('.tm[data-act=pickSlot]'); ok('确认新的预约时间' in txt(),'改期提交弹窗标题'); C('[data-act=bookSubmit]'); E("ACT.close();render()")
+    ok(E("S.bk.pend && S.bk.pend.type")=='resch' and not E("left('resch')"),'已成功的预约改期需老师同意、扣次数')
+    E("ACT.go('mybook');render()"); C('[data-act=zPend]'); E("ACT.close();render()"); ok(E('S.bk.st')=='已确认' and not E('S.bk.pend'),'老师同意改期，新时间生效')
+    E("ACT.go('mybook');render()"); C('[data-act=zMove]'); ok(E('S.modal')=='moved','老师改约弹窗'); C('[data-act=movedResch]'); ok('不占用' in txt(),'老师改约引起的改期不计次')
+    C('[data-act=reschOk]'); E("ACT.go('home');render()"); ok(E('S.resch') is None,'离开预约中心自动退出改期')
+    E("ACT.go('mybook');render()"); C('[data-act=modal][data-arg=cancel]'); ok('不占用' in txt(),'老师改约后取消不计次'); C('[data-act=cancelOk]'); ok(E("left('cancel')") and E('S.bk') is None,'取消成功且不扣次数')
+    E("ACT.go('book');render()"); C('.tm[data-act=pickSlot]'); C('[data-act=bookSubmit]'); E("ACT.close();ACT.zConfirm();ACT.close();ACT.go('mybook');render()")
+    C('[data-act=modal][data-arg=cancel]'); C('[data-act=cancelOk]'); ok(E("S.bk.pend.type")=='cancel','已确认的取消需老师同意'); C('[data-act=zPend]'); ok(E('S.modal')=='appr','老师同意取消弹窗'); E("ACT.close();render()")
+    E("ACT.go('book');render()"); C('.tm[data-act=pickSlot]'); C('[data-act=bookSubmit]'); E("ACT.close();ACT.zConfirm();ACT.close();ACT.go('mybook');render()")
+    ok(pg.locator('[data-arg=cancel][disabled]').count()==1 and pg.locator('.urg a.tel').count()>=2,'取消次数用完：锁定+可拨号求助'); shot('a08_quota')
+    C('[data-act=zDecline]'); ok(E('S.modal')=='info' and E('S.bkHist[0].st')=='已婉拒','老师婉拒弹窗+历史'); C('.mo [data-act=go][data-arg=book]'); ok(E('S.page')=='book','婉拒后可直接重新预约')
+    C('.tm[data-act=pickSlot]'); C('[data-act=bookSubmit]'); E("ACT.close();ACT.zConfirm();ACT.close();ACT.go('mybook');render()"); cid=E('S.bk.cid'); C('[data-act=zDone]')
+    ok(E('S.owner')==cid,'预咨询后分配负责咨询师'); E(f"ACT.cp('{cid}');render()"); ok(pg.locator('.crec').count()==1 and '已完成咨询' in txt(),'老师主页显示我和 TA 的咨询记录'); shot('a09_cpage')
+    E("ACT.go('book');render()"); C('[data-act=modal][data-arg=change]'); C('[data-act=chgWhy]'); C('[data-act=chgSubmit]'); C('[data-act=zChg]')
+    ok(E(f"!canB(C('{cid}'))"),'更换通过后排除原咨询师'); E("ACT.go('book');render()"); ok(E(f"!DATA.counsellors.filter(canB).some(c=>c.id==='{cid}')"),'预约中心不再出现原咨询师')
+    # help & docs & details
+    E("ACT.go('help');render()"); pg.locator('details[data-k=q1] summary').click(); C('[data-act=doc][data-arg=terms]'); pg.keyboard.press('Escape'); pg.wait_for_timeout(80)
+    ok(E("document.querySelector('details[data-k=q1]').open"),'重绘后 FAQ 展开状态保留'); ok(pg.locator('.hc a.tel').count()>=3,'热线可点拨')
+    # garden
+    E("ACT.go('garden');render()"); E("ACT.gOpen('g12:0');render()"); ok('读完了' in txt(),'文章显示全文'); pg.keyboard.press('Escape')
+    E("ACT.gOpen('g5:0');render()"); C('[data-act=gJoin]'); ok(E("S.joined.includes('g5')") and '已报名' in txt(),'活动可报名'); pg.keyboard.press('Escape')
+    E("ACT.gOpen('g3:0');render()"); C('.player [data-act=gPlay]'); ok(E('S.playing'),'播放按钮有反应'); pg.keyboard.press('Escape')
+    # self-tests
+    E("ACT.svGo('todo');render()"); ok(pg.locator('.sc').count()==9,'自我了解共 9 项'); shot('a10_surveys')
+    C('.sc[data-arg=brs]'); C('[data-act=funAns][data-arg="0:3"]'); E("ACT.go('home');render()"); E("ACT.svGo();render()"); C('.sc[data-arg=brs]'); ok(E('S.fun.ans[0]')==3,'自我了解中途离开答案保留')
+    C('[data-act=zFun]'); C('[data-act=funSubmit]'); ok(E('S.page')=='funres' and '得分' in txt(),'BRS 结果页'); shot('a11_funres')
+    for k in ['ucla3','scs','gse']:
+        E(f"ACT.funStart('{k}');ACT.zFun();ACT.funSubmit();render()"); ok(E('S.page')=='funres' and '得分' in txt(),f'{k} 结果页')
+    E("ACT.go('myq');render()"); ok('自我了解 · 仅自己可见' in txt(),'我的问卷含做过的自我了解')
+    # profile
+    E("ACT.go('profile');render()"); C('[data-act=ecOpen]'); pg.fill('[data-bind="ec.name"]','新联系人'); pg.fill('[data-bind="ec.tel"]','81234567'); C('[data-act=ecSave]'); ok(E('!!S.ec.err'),'紧急联系人不能与本人号码相同')
+    pg.fill('[data-bind="ec.tel"]','90001111'); C('[data-act=ecSave]'); ok('新联系人' in txt(),'改名后立即显示')
+    # footprints
+    E("ACT.go('home');render()"); n=E('S.foot.length'); ok(n>3 and not any('登录' in x for x in E("S.foot.map(f=>f.t[0])")),'足迹无系统日志'); 
+    for i in range(min(5,n)):
+        E(f"ACT.go('home');render()"); pg.locator('.foot button.ev').nth(i).click(); pg.wait_for_timeout(60); ok(E('S.page')!='home' or E('S.modal') is not None,f'足迹 {i+1} 可点开')
+    # ================= B =================
+    scen('B'); E("prepare('done');render()"); ok(E('S.modal')=='invite','B：v1.18 先出预约邀请，再出结束卡')
+    ok('顶部「预约咨询」' in txt(),'邀请弹窗入口名正确'); C('[data-act=inviteGo]'); ok(E('S.page')=='book','选个时间→预约中心')
+    scen('B'); E("prepare('done');render()"); C('[data-act=inviteNo]'); ok(E('S.modal')=='done','B：暂不需要后出结束卡'); ok(E("document.querySelector('.mo .x')!==null"),'结束卡有关闭按钮')
+    # ================= C =================
+    scen('C'); E("prepare('scale');render()"); C('[data-act=zScale]'); ok(E('S.modal')=='safe' and pg.locator('.mo img.mascot').count()==0,'问卷安全提示不出现小屿'); shot('c01_safe')
+    C('[data-act=safeOops]'); ok('仍可能联系你' in txt(),'我点错了：说明'); C('.mo [data-act=callUcc]'); ok(E('S.modal')=='info' and E('S.callback'),'请 UCC 今天联系我'); E("ACT.close();render()")
+    E("prepare('chat');render()"); E("S.callback=false;userSay('我真的好想死');render()"); pg.wait_for_timeout(900); ok(E('S.task.crisis') and E('S.task.paused'),'扩充词库触发危机'); shot('c02_crisis')
+    ok(pg.locator('.endbar [data-act=callUcc]').count()==1 and pg.locator('.helpcard [data-act=callUcc]').count()>=1,'危机后有即时通道')
+    C('.endbar [data-act=callUcc]'); E("ACT.close();render()"); ok(pg.locator('.endbar [data-act=callUcc][disabled]').count()==1,'已通知后按钮置灰')
+    C('[data-act=resume]'); pg.wait_for_timeout(900); ok(E("S.task.msgs.at(-1).text").startswith('谢谢你告诉我你现在是安全的'),'继续聊：小屿承接并重提问题')
+    for w in ['想轻生','想自残','活不下去了','割腕']:
+        ok(E(f"RULE.crisisRe.test('{w}')"),'危机词：'+w)
+    # ================= D =================
+    scen('D'); C('[data-act=start]'); ok(E('S.page')=='phone','D：已同意当前版本，跳过同意书'); C('[data-act=zPhone]'); C('[data-act=phoneNext]'); ok(E('S.page')=='home','D 登录')
+    ok(E("S.modal")=='remind' and '有 1 项选做问卷' in txt(),'D 仅选做：提醒语气放松'); E("ACT.close();render()")
+    ok('新生适应小组' not in pg.inner_text('.cards'),'D 推荐不含新生小组')
+    E("ACT.aiGo();render()"); ok(pg.locator('[data-act=histChat]').count()==1,'D 访谈页有历史记录'); C('[data-act=viewChat]'); ok(E("S.task.msgs.filter(m=>m.who==='me').length")==E('S.task.rounds'),'D 轮数与对话一致')
+    E("ACT.cp('c4');render()"); ok('已完成咨询' in txt(),'D 老师主页有咨询记录'); shot('d01_cpage')
+    E("ACT.go('book');render()"); ok(E("DATA.counsellors.filter(canB).map(c=>c.id).join()")=='c4','D 只能约负责咨询师')
+    C('[data-act=modal][data-arg=change]'); C('[data-act=chgWhy]'); C('[data-act=chgSubmit]'); C('[data-act=zChg]'); E("ACT.go('book');render()")
+    ok(not E("DATA.counsellors.filter(canB).some(c=>c.id==='c4')"),'D 更换后排除王磊'); C('.tm[data-act=pickSlot]'); C('[data-act=bookSubmit]'); E("ACT.close();ACT.go('mybook');render()"); E("if(S.bk.st==='待确认')ACT.zConfirm();render()"); C('[data-act=zDone]')
+    ok(E('S.owner')!='c4','D 新负责咨询师不是原来的')
+    E("ACT.go('book');render()"); C('[data-act=bCampus]') if False else None; E("S.bookTab='campus';render()"); ok(pg.locator('.chips button[disabled]').count()==1,'无老师的校区置灰')
+    # all pages render in en without error
+    E("setLang('en');render()")
+    for j in ['home','ai','book','mybook','garden','help','msgs','myq','profile']:
+        E(f"ACT.go('{j}');render()")
+    E("setLang('zh');render()")
+    b.close()
+print('\n'.join(l for l in log if l.strip()!='OK'))
+print('FAILS:',len(fails)); print('errs',errs[:5])

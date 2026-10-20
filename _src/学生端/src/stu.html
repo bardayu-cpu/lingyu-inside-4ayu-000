@@ -1,0 +1,708 @@
+<!-- =====================================================================
+  灵屿 2.0 · 学生端页面模板
+  · 改文案：直接改下面的文字。[[中文|English]] 是中英文成对的文案，竖线左边中文、右边英文
+  · {{xxx}} 是程序填入的内容，不要删
+  · <template id="p-xxx"> 是一页，id="m-xxx" 是一个弹窗
+====================================================================== -->
+
+<!-- 顶部栏：未登录 -->
+<template id="hd-out">
+<header class="hd">
+  <div class="logo"><img src="{{M}}" alt=""><div><b>[[灵 屿|CORISLE]]</b><small>[[AI 心理健康小助手|Your wellbeing companion]]</small></div></div>
+  <div class="sp"></div>
+  {{lang}}
+</header>
+</template>
+
+<!-- 顶部栏：已登录。左侧是「去做事」的 6 个 tab；右侧是消息、语言、我自己 -->
+<template id="hd-in">
+<header class="hd">
+  <button class="logo only {{navHome}}" data-act="go" data-arg="home"><img src="{{M}}" alt=""><span>[[个人中心|My space]]</span></button>
+  <nav class="tnav">
+    <button class="{{navSv}}" data-act="svGo" data-arg="todo">{{iList}}<span class="t">[[心理问卷|Questionnaires]]</span></button>
+    <button class="{{navAi}}" data-act="aiGo">{{iChat}}<span class="t">[[AI 访谈|Talk with Xiaoyu]]</span></button>
+    <button class="{{navBook}}" data-act="go" data-arg="book">{{iCal}}<span class="t">[[预约咨询|Counselling]]</span> {{bookBadge}}</button>
+    <button class="{{navGarden}}" data-act="go" data-arg="garden">{{iLeaf}}<span class="t">[[心理园区|Wellbeing hub]]</span></button>
+    <button class="{{navHelp}}" data-act="go" data-arg="help">{{iHelp}}<span class="t">[[帮助中心|Help]]</span></button>
+  </nav>
+  <div class="sp"></div>
+  <div class="bell-w"><button class="bell {{navMsgs}}" data-act="inbox" aria-label="[[消息中心|Notifications]]">{{iBell}}{{unread}}</button>{{inbox}}</div>
+  <div class="lang-dock">{{lang}}</div>
+  <div class="me-w"><button class="me" data-act="menu" aria-haspopup="menu" aria-expanded="{{menuOpen}}"><span class="sch">N</span><span>{{hello}}</span>{{iDown}}</button>{{menu}}</div>
+</header>
+</template>
+
+<!-- 个人菜单：和「我」有关的记录与资料 -->
+<template id="menu">
+<div class="menu">
+  <button data-act="go" data-arg="myq">{{iList}}[[我的问卷|My questionnaires]]</button>
+  <button data-act="go" data-arg="talks">{{iChat}}[[我的访谈记录|My conversations]]</button>
+  <button data-act="go" data-arg="mybook">{{iCal}}[[我的预约|My appointments]]</button>
+  <button data-act="go" data-arg="report">{{iCard}}[[我的报告|My reports]]</button>
+  <button data-act="go" data-arg="profile">{{iUser}}[[个人信息|My profile]]</button>
+  <hr>
+  <button data-act="logout">{{iOut}}[[退出|Sign out]]</button>
+</div>
+</template>
+
+<!-- 消息中心：别人发给我的提醒和动态 -->
+<template id="inbox">
+<div class="menu inbox">
+  <div class="ibh"><b>[[消息中心|Notifications]]</b><button data-act="readAll">[[全部已读|Mark all as read]]</button></div>
+  {{items}}
+</div>
+</template>
+
+<!-- 01 启动页：学校的门面。主人＝NTU UCC；向导＝小屿；提供方＝灵屿（底部落款）。无导航 -->
+<template id="p-launch">
+<div class="launch fade">
+  <div class="ln-art"><img src="{{BG}}" alt="">
+    <div class="ln-bub">[[我会陪你看见每一个真实的自己|I’ll be here as you discover the real you]]</div>
+    <div class="ln-cap"><b>[[小屿|Xiaoyu]]</b>[[灵屿系统访谈智能体|CORISLE’s AI interview companion]]</div>
+  </div>
+  <div class="ln-top">
+    <div class="ln-host"><span class="crest">NTU</span><b>[[南洋理工大学|Nanyang Technological University]]</b><i></i><span>[[大学心理咨询中心 UCC|University Counselling Centre]]</span></div>
+    <span class="sp"></span>{{lang}}
+  </div>
+  <div class="ln-main">
+    <h1>[[认识自己，<br>是一切成长的开始|Getting to know yourself<br>is where all growth begins]]</h1>
+    <p class="ln-sub">[[心理普测 · AI 访谈 · 咨询预约 · 心理园区|Wellbeing check · Talk with Xiaoyu · Counselling · Wellbeing hub]]</p>
+    <button class="btn pri lg" data-act="start">[[开始体验|Get started]]</button>
+  </div>
+  <div class="ln-foot"><span>[[由|Powered by]]</span><img src="{{M}}" alt=""><b>[[灵屿|CORISLE]]</b><span>[[提供技术支持|]]</span><i></i><span>[[一站式群体心理健康智能筛查与服务协同系统 · 以 AI 补全情境线索，将群体评估、专业判断与后续支持连成一条完整链路。|One platform for campus mental health screening and support · AI fills in the context, linking screening, professional judgement and follow-up support.]]</span></div>
+</div>
+</template>
+
+<!-- 协议正文：知情同意书（启动流程和帮助中心共用） -->
+<template id="doc-consent">
+    <b>[[欢迎你参与南洋理工大学心理健康普测|Welcome to the NTU wellbeing check]]</b>
+    <p>[[本次普测包含标准量表与 AI 访谈，用于了解你的心理状态、情绪体验和生活压力，并为你生成非诊断性的个人报告。开始前，请确认以下内容：|This check includes short standard questionnaires and a conversation with an AI, to understand how you’ve been feeling and what’s been weighing on you. You’ll receive a personal, non-diagnostic summary. Before you start, please confirm the following:]]</p>
+    <ol>
+      <li>[[<b>非医疗诊断声明</b> — 结果仅用于心理健康自我了解和学校心理服务安排，不构成医学诊断或治疗建议。|<b>Not a diagnosis</b> — Results are for self-understanding and for arranging support at NTU. They are not a medical diagnosis or treatment advice.]]</li>
+      <li>[[<b>自愿参与原则</b> — 你可以随时暂停或退出，可以跳过任何问题，退出不会对你造成任何不利影响。|<b>Voluntary</b> — You can pause or stop at any time and skip any question. Stopping will not affect you in any way.]]</li>
+      <li>[[<b>可能涉及的内容</b> — 可能涉及睡眠、情绪、压力、人际关系、自我价值感等话题。如感到不适，可以立即停止。|<b>What we’ll ask about</b> — Sleep, mood, stress, relationships and self-worth. If anything feels uncomfortable, you can stop right away.]]</li>
+      <li>[[<b>学校心理中心查看</b> — 你的量表作答和访谈内容会提供给大学心理咨询中心（UCC）的专业老师，用于复核和安排后续支持；不同岗位的老师只能看到职责范围内的信息。|<b>Who sees your answers</b> — Your answers and conversation are shared with professional staff at the University Counselling Centre (UCC) to review and arrange support. Each staff member only sees what their role requires.]]</li>
+      <li>[[<b>保密例外</b> — 如出现可能危及你或他人生命安全的情况，学校心理中心会突破保密，联系你本人、你的紧急联系人或相关人员。|<b>Limits of confidentiality</b> — If there is a risk to your life or someone else’s, UCC may contact you, your emergency contact or others who can help.]]</li>
+      <li>[[<b>预约与转介</b> — 预约咨询时，你的问卷和访谈信息会分享给接待你的咨询师；必要时，咨询师可能建议你转介至医疗机构。|<b>Appointments and referral</b> — If you book a session, your counsellor will see your answers. Where needed, they may suggest a referral to medical care.]]</li>
+      <li>[[<b>通知方式</b> — 学校可能通过站内消息和短信向你发送普测提醒、预约结果等通知。|<b>Notifications</b> — NTU may send reminders and appointment updates in-app and by SMS.]]</li>
+      <li>[[<b>隐私与数据处理</b> — 数据仅用于学校心理服务；统计分析使用匿名数据，不会向任何第三方披露可识别的个人信息。|<b>Privacy</b> — Your data is used only for student support. Statistics use anonymised data, and identifiable information is never shared with third parties.]]</li>
+    </ol>
+</template>
+
+<template id="doc-privacy">
+<b>[[灵屿隐私政策|CORISLE Privacy Policy]]</b>
+<p>[[本政策说明灵屿在南洋理工大学心理健康服务中如何收集、使用和保护你的信息。|This policy explains how CORISLE collects, uses and protects your information as part of NTU’s student wellbeing services.]]</p>
+<ol>
+  <li>[[<b>我们收集的信息</b> — 学号、姓名、校区、学院、手机号、紧急联系人；问卷作答、访谈内容；预约记录。「自我了解」的结果只保存在你的账号里。|<b>What we collect</b> — Matric number, name, campus, college, mobile number and emergency contacts; questionnaire answers and conversations; appointment records. Self-test results stay in your account only.]]</li>
+  <li>[[<b>谁能看到</b> — 只有大学心理咨询中心（UCC）中经过授权的工作人员，按岗位查看职责范围内的信息。学生助理只能看到经过脱敏的编号，看不到你的回答。|<b>Who can see it</b> — Only authorised UCC staff, each seeing what their role requires. Student assistants see masked IDs only, never your answers.]]</li>
+  <li>[[<b>不会做的事</b> — 不会把可识别你的信息提供给任何第三方；不会用于成绩评定、奖惩或与心理服务无关的用途。|<b>What we never do</b> — Share identifiable information with third parties, or use it for grading, discipline or anything unrelated to student support.]]</li>
+  <li>[[<b>保存与删除</b> — 数据保存在新加坡境内的服务器上，在校期间保留；毕业后按学校规定的期限匿名化或删除。|<b>Storage</b> — Data is stored on servers in Singapore while you’re a student, then anonymised or deleted according to NTU’s retention schedule.]]</li>
+  <li>[[<b>你的权利</b> — 你可以联系 UCC 查询、更正你的个人信息，或撤回同意。撤回不影响已经提供的服务。|<b>Your rights</b> — Contact UCC to access or correct your information, or to withdraw consent. Withdrawing doesn’t affect support already given.]]</li>
+</ol>
+</template>
+
+<template id="doc-terms">
+<b>[[灵屿用户服务协议|CORISLE Terms of Use]]</b>
+<p>[[使用灵屿前，请了解以下约定。|Please read these terms before using CORISLE.]]</p>
+<ol>
+  <li>[[<b>服务内容</b> — 灵屿提供心理健康普测、AI 访谈、咨询预约和心理园区内容，由大学心理咨询中心（UCC）提供专业支持。|<b>The service</b> — CORISLE offers wellbeing checks, AI conversations, counselling bookings and wellbeing content, with professional support from UCC.]]</li>
+  <li>[[<b>关于小屿</b> — 小屿是 AI 访谈助手，不是心理咨询师，它的回应不构成诊断或治疗建议。|<b>About Xiaoyu</b> — Xiaoyu is an AI companion, not a counsellor. Its replies are not a diagnosis or treatment advice.]]</li>
+  <li>[[<b>账号</b> — 账号与你的学号和手机号绑定，仅限本人使用。手机号如需更换，请联系 UCC。|<b>Your account</b> — Linked to your matric number and mobile, for your use only. Contact UCC to change your mobile number.]]</li>
+  <li>[[<b>预约规则</b> — 至少提前 24 小时预约；每 14 天可改期 1 次、取消 1 次，老师调整时间不计入。|<b>Booking rules</b> — Book at least 24 hours ahead. You can reschedule once and cancel once every 14 days; changes made by your counsellor don’t count.]]</li>
+  <li>[[<b>紧急情况</b> — 灵屿不是紧急服务。如果你或他人有生命危险，请立即拨打 995 或 SOS 1767。|<b>Emergencies</b> — CORISLE is not an emergency service. If you or someone else is in danger, call 995 or SOS 1767 right away.]]</li>
+</ol>
+</template>
+
+<!-- 02 知情同意（1.0 + 2.0 补充条款） -->
+<template id="p-consent">
+<div class="center fade"><div class="ob">
+  {{steps}}
+  <h2>[[知情同意书|Informed consent]]</h2>
+  <p class="sub">[[这是一段属于你的探索旅程，没有对错之分，可以随时暂停。开始前，请完整阅读以下内容。|A journey that’s all about you — no right or wrong answers, and you can pause anytime. Please read the full statement first.]]</p>
+  <div class="consent" id="consentBox" data-keep>
+    {{doc}}
+    <p style="color:var(--mute)">[[知情同意书 v2.0 · 你的同意时间与版本将被记录|Consent statement v2.0. The time and version of your consent will be recorded.]]</p>
+  </div>
+  <div class="ck {{ckCls}}" data-act="agree" role="checkbox" aria-checked="{{ckOn}}" tabindex="0"><i>✓</i>[[我已阅读并同意上述知情同意书、|I have read and agree to the consent statement above, the ]]<button class="lnk" data-act="doc" data-arg="privacy">[[《隐私政策》|Privacy policy]]</button>[[和|and the ]]<button class="lnk" data-act="doc" data-arg="terms">[[《用户服务协议》|Terms of use]]</button></div>
+  {{readHint}}
+  <div class="obnav"><button class="btn sec" data-act="back1" data-arg="launch">{{iLeft}}[[返回|Back]]</button><button class="btn pri" {{nextDis}} data-act="consentNext">[[我已阅读并同意，下一步|Agree and continue]]</button></div>
+  <div class="zaps"><span class="zap" data-act="zConsent">⚡ [[演示 · 读完并勾选|Demo: read and tick]]</span></div>
+  {{hot}}
+</div></div>
+</template>
+
+<!-- 03 手机验证（1.0） -->
+<template id="p-phone">
+<div class="center fade"><div class="ob">
+  {{steps}}
+  <h2>[[验证你的手机号|Verify your mobile number]]</h2>
+  <p class="sub">[[用于保存进度和接收通知，不会用于与普测无关的用途|We use it to save your progress and send updates — nothing else]]</p>
+  <div class="fld"><div class="lab">[[手机号|Mobile number]]<em>*</em></div>
+    <div class="pre">{{ccSel}}<input class="inp {{phErr}}" data-bind="phone" value="{{phone}}" placeholder="{{phPh}}" maxlength="{{phMax}}" inputmode="numeric"></div>{{phMsg}}</div>
+  <div class="fld"><div class="lab">[[验证码|Verification code]]<em>*</em></div>
+    <div class="inline"><input class="inp {{cdErr}}" data-bind="code" value="{{code}}" placeholder="[[6 位验证码|6-digit code]]" maxlength="6" inputmode="numeric"><button class="btn sec" style="width:140px;height:44px" id="sendBtn" data-act="sendCode" {{sendDis}}>{{sendLbl}}</button></div>{{cdMsg}}</div>
+  <div class="obnav"><button class="btn sec" data-act="back1" data-arg="{{phoneBack}}">{{iLeft}}[[上一步|Back]]</button><button class="btn pri" data-act="phoneNext">[[下一步|Continue]]</button></div>
+  <div class="hint">[[若你此前有未完成的普测，验证后将自动识别进度|If you have an unfinished check, we’ll find it after you verify]]</div>
+  <div class="zaps"><span class="zap" data-act="zPhone">⚡ [[演示 · 填入手机号和验证码|Demo: fill number and code]]</span></div>
+</div></div>
+</template>
+
+<!-- 04 基本信息（1.0 + 校区学院 / 紧急联系人 / 名单比对） -->
+<template id="p-info">
+<div class="center fade"><div class="ob">
+  {{steps}}
+  <h2>[[填写基本信息|Tell us about you]]</h2>
+  <p class="sub">[[这些信息会与学校名单核对，并用于生成你的个人报告|We’ll check these against NTU records and use them for your summary]]</p>
+  {{rosterErr}}
+  <div class="row2">
+    <div class="fld"><div class="lab">[[姓名|Full name]]<em>*</em></div><input class="inp" data-bind="f.name" value="{{name}}" placeholder="[[请输入你的真实姓名|As in NTU records]]"></div>
+    <div class="fld"><div class="lab">[[年龄|Age]]<em>*</em></div><input class="inp" data-bind="f.age" value="{{age}}" placeholder="[[如 20|e.g. 20]]" inputmode="numeric"></div>
+  </div>
+  <div class="fld"><div class="lab">[[性别|Gender]]<em>*</em></div><div class="seg">{{gender}}</div></div>
+  <div class="row2">
+    <div class="fld dd"><div class="lab">[[学校|University]]<em>*</em></div>
+      <button class="inp selbtn" style="color:{{schoolColor}}" data-act="schoolDD">{{schoolLbl}}{{iDown}}</button>{{schoolList}}</div>
+    <div class="fld"><div class="lab">[[学号|Matric no.]]<em>*</em></div><input class="inp" data-bind="f.sid" value="{{sid}}" placeholder="[[请输入学号|e.g. U2620318A]]"></div>
+  </div>
+  <div class="row2">
+    <div class="fld"><div class="lab">[[校区|Campus]]<em>*</em></div><select class="inp" data-bind="f.campus" data-rerender>{{campusOpts}}</select></div>
+    <div class="fld"><div class="lab">[[学院|College]]<em>*</em></div><select class="inp" data-bind="f.college" data-rerender>{{collegeOpts}}</select></div>
+  </div>
+  <div class="lab">[[紧急联系人|Emergency contact]]<em>*</em></div>
+  <div class="row3 fld">
+    <input class="inp" data-bind="f.ecName" value="{{ecName}}" placeholder="[[姓名|Name]]">
+    <select class="inp" data-bind="f.ecRel" data-rerender>{{relOpts}}</select>
+    <div class="pre">{{ecCcSel}}<input class="inp" data-bind="f.ecTel" value="{{ecTel}}" placeholder="[[手机号|Mobile]]" maxlength="{{ecMax}}" inputmode="numeric"></div>
+  </div>
+  <div class="note">[[另一位紧急联系人由学校从你的入学资料中导入|A second emergency contact is imported from your enrolment records]]</div>
+  {{infoErr}}
+  <div class="obnav"><button class="btn sec" data-act="back1" data-arg="phone">{{iLeft}}[[上一步：改手机号|Back: change number]]</button><button class="btn pri" data-act="infoNext">[[确认无误，进入灵屿|Confirm and continue]]</button></div>
+  <div class="zaps"><span class="zap" data-act="zInfo">⚡ [[演示 · 填入示例信息|Demo: fill sample]]</span><span class="zap" data-act="zInfoBad">⚡ [[演示 · 名单外学号|Demo: not on records]]</span></div>
+</div></div>
+</template>
+
+<template id="roster-err">
+<div class="alert">{{iInfo}}<div><b>[[没有在学校名单中找到你的信息|We couldn’t find you in NTU records]]</b><br>[[请确认学号和手机号与学校登记的一致；手机号填错的话，可以点「上一步」修改。如果信息无误，请联系大学心理咨询中心（UCC）补录：|Check that your matric number and mobile match NTU’s records — tap Back to fix your number. If they’re correct, contact UCC to be added:]]<br>{{ucc}}</div></div>
+</template>
+
+<!-- 05 个人中心 -->
+<template id="p-home">
+<div class="page fade"><div class="wrap">
+  <div class="hero"><img src="{{M}}" alt=""><div><h2>{{greet}}</h2><div class="say"><b>[[小屿提醒：|Xiaoyu says:]]</b>“{{say}}”</div></div></div>
+  {{mv}}
+  <div class="sect">[[我的待办|To do]]<span style="font-weight:400;font-size:13px;color:var(--mute2)">{{todoN}}</span></div>
+  <div class="panel">{{todos}}</div>
+  <div class="sect">[[最近足迹|Recent activity]]</div>
+  <div class="panel foot">{{foot}}</div>
+  <div class="sect">[[为你推荐|For you]]<button data-act="go" data-arg="garden">[[去心理园区|Open the hub]]</button></div>
+  <div class="cards">{{recs}}</div>
+</div></div>
+</template>
+
+<!-- 个人中心主任务卡：未完成 -->
+<template id="mission-todo">
+<div class="mission">
+  <div><h3>{{tName}} {{reqTag}}</h3><div class="meta"><span>{{iUser}}[[来自|From]] {{from}}</span><span>{{iClock}}[[剩余有效期|Due in]] {{left}}</span><span>{{iSand}}{{dur}}</span></div></div>
+  <button class="btn pri" data-act="taskGo">{{taskBtn}}</button>
+  <div class="tri">{{tri}}</div>
+</div>
+</template>
+
+<!-- 个人中心主任务卡：已完成 -->
+<template id="mission-done">
+<div class="mission ok">
+  <div><h3>{{tName}} <span class="pill g">[[已完成|Completed]]</span></h3><div class="meta"><span>{{iCheck}}{{doneAt}} [[完成|completed]]</span><span>{{iCard}}[[小屿已为你整理好卡片|Xiaoyu has written your card]]</span></div></div>
+  <button class="btn soft" data-act="card" data-arg="cur">[[查看我的卡片|View my card]]</button>
+</div>
+</template>
+
+<!-- 06 任务说明（沿用 1.0 欢迎卡） -->
+<template id="p-intro">
+<div class="center fade"><div class="ob" style="text-align:center">
+  {{top}}
+  <h2 style="margin-top:16px">{{tName}}</h2>
+  <p class="sub">[[来自|From]] {{from}}</p>
+  {{reuse}}
+  <div class="box2">
+    <div><span>[[包含内容|What’s included]]</span><b>{{incl}}</b></div>
+    <div><span>[[预计用时|Time]]</span><b>{{dur}}</b></div>
+    <div><span>[[有效期至|Complete by]]</span><b>{{until}}</b></div>
+  </div>
+  <p style="color:var(--ink2);text-align:left;font-size:14px;line-height:1.9">{{text}}</p>
+  <button class="btn pri blk" data-act="introGo">{{goLbl}}</button>
+  <div class="hint">[[进度会自动保存|Your progress saves automatically]]</div>
+  {{decl}}
+</div></div>
+</template>
+
+<!-- 07 标准化问卷（独立页面，在访谈之前完成） -->
+<template id="p-survey">
+<div class="stage fade" style="flex-direction:column">
+  <div class="page" id="survey" data-keep style="padding-bottom:24px"><div class="wrap" style="width:min(780px,100%)">
+    <div class="ph"><p style="font-size:13px">{{task}}</p><h2>{{title}}</h2><p>{{guide}}</p></div>
+    <div class="qhead" style="margin:0 0 8px"><small>[[这是国际通用的标准化问卷，题目和选项保持原样|A standardised questionnaire used worldwide. Questions and options are unchanged.]]</small><small>{{pos}}</small></div>
+    <div class="qbar"><i style="width:{{pct}}%"></i></div>
+    {{qs}}
+  </div></div>
+  <div class="qnav"><small>{{iCheckS}}[[已自动保存，离开后回来可以接着答|Saved automatically — come back anytime]]</small><span class="zap" data-act="zScale">⚡ [[演示 · 按场景填写|Demo: fill for scenario]]</span>{{back}}<button class="btn pri" data-act="qNext">{{next}}</button></div>
+</div>
+</template>
+
+<!-- 问卷 → 访谈 过渡页：说明接下来是 AI 对话，自动跳转 -->
+<template id="p-bridge">
+<div class="center fade"><div class="ob" style="text-align:center;padding:36px 32px 32px">
+  <div class="okmark">{{iCheck}}</div>
+  <h2 style="margin:18px 0 6px">[[问卷已提交|Questionnaires submitted]]</h2>
+  <p class="sub" style="margin-bottom:22px">[[谢谢你认真作答|Thank you for your answers]]</p>
+  <div class="strip" style="text-align:left"><img src="{{M}}" alt="" style="width:48px;height:48px;border-radius:12px;flex:none"><div class="grow"><b>[[接下来，和小屿聊一聊|Next: a chat with Xiaoyu]]</b><small>[[小屿是 AI 访谈助手，会根据你的情况和你聊聊最近的生活，大约 15 分钟。可以打字，也可以说话。|Xiaoyu is an AI companion who’ll chat with you about how life has been — about 15 minutes. Type or talk, whichever you prefer.]]</small></div></div>
+  <div class="qbar" style="margin:6px 0 10px"><i class="go" style="width:0%"></i></div>
+  <p class="hint" style="margin:0 0 18px">[[正在进入对话…|Opening the chat…]]</p>
+  <button class="btn pri blk" data-act="bridgeGo">[[现在进入|Go now]]</button>
+</div></div>
+</template>
+
+<!-- 08–09 访谈窗口（1.0 外壳：左侧内容 + 右侧面板） -->
+<template id="p-session">
+<div class="stage fade">
+  <div class="chat">
+    <div class="msgs" id="msgs" data-keep>{{main}}</div>
+    {{bar}}
+  </div>
+  <aside class="side">
+    <div class="sbox"><h4>[[当前阶段|Progress]] <span class="cd">[[剩余有效期|Due in]] {{left}}</span></h4><div class="stg">{{stg}}</div></div>
+    <div class="sbox"><h4>[[本轮普测|This check]]</h4><div class="stat"><div><b>{{q}}</b><small>{{qLbl}}</small></div><div><b>{{mins}}′</b><small>[[已用时长|Minutes so far]]</small></div></div></div>
+    <div class="sbox"><h4>[[小屿提醒|From Xiaoyu]]</h4>
+      <div class="tip"><img src="{{M}}" alt=""><span>“{{tipLine}}”</span></div>
+      <ul class="tips"><li>{{iCheckS}}[[可以随时切换语音或文字|Switch between voice and text anytime]]</li><li>{{iCheckS}}[[不想回答可以说「跳过」|Say “skip” to pass on a question]]</li><li>{{iCheckS}}[[关掉页面也没关系，进度会保存|Closing the page is fine — progress is saved]]</li><li>{{iCheckS}}[[需要帮助，可拨打 24 小时热线 1767|Need help now? Call 1767, 24 hours]]</li></ul>
+      {{sideBook}}
+    </div>
+    <div class="sbtn">{{sideBtns}}</div>
+  </aside>
+</div>
+</template>
+
+<template id="help-card">
+<div class="helpcard"><b>{{iShield}}[[你可以马上联系这些人|You can reach these people right now]]</b>
+  <div class="hl"><a>[[新加坡援人协会 SOS|Samaritans of Singapore (SOS)]]</a><span><a class="tel" href="tel:1767">1767</a> · [[24 小时|24 hours]]</span></div>
+  <div class="hl"><a>mindline</a><span><a class="tel" href="tel:1771">1771</a> · [[24 小时|24 hours]]</span></div>
+  <div class="hl"><a>[[大学心理咨询中心 UCC|University Counselling Centre]]</a><span>[[工作日 8:30–17:30|Weekdays 8:30 am–5:30 pm]]</span></div>
+  <div class="hl"><a>[[你的紧急联系人|Your emergency contact]] {{ec}}</a><span>{{ecTel}}</span></div>
+  <div class="hl"><a>[[紧急情况|Emergency]]</a><span><a class="tel" href="tel:995">995</a></span></div>
+  {{cb}}
+</div>
+</template>
+
+<!-- 心理问卷：学校任务 + 自我了解，分开放 -->
+<template id="p-surveys">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[心理问卷|Questionnaires]]</h2></div>
+  <div class="sect">[[学校任务|From NTU]]</div>
+  <div class="tabs">{{tabs}}</div>
+  <div class="panel">{{tasks}}</div>
+  <div class="sect" style="margin-top:50px">[[自我了解|Get to know yourself]]<span style="font-weight:400;font-size:13px;color:var(--mute2)">{{iLock}} [[结果仅自己可见，不发送给学校|Only you see the results — nothing is sent to NTU]]</span></div>
+  <div class="scg">{{fun}}</div>
+</div></div>
+</template>
+
+<!-- 趣味测试：作答 -->
+<template id="p-fun">
+<div class="stage fade" style="flex-direction:column">
+  <div class="page" id="fun" data-keep style="padding-bottom:24px"><div class="wrap" style="width:min(780px,100%)">
+    <div class="ph"><p style="font-size:13px">[[自我了解|Self-test]]，{{src}}</p><h2>{{name}}</h2><p>{{guide}}</p></div>
+    <div class="qhead" style="margin:0 0 8px"><small>{{iLock}} [[结果仅自己可见，不发送给学校|Only you see the results — nothing is sent to NTU]]</small><small>{{pos}}</small></div>
+    <div class="qbar"><i style="width:{{pct}}%"></i></div>
+    {{qs}}
+  </div></div>
+  <div class="qnav"><small>{{iCheckS}}[[已自动保存，离开后回来可以接着答|Saved automatically — come back anytime]] · {{mins}}</small><span class="zap" data-act="zFun">⚡ [[演示 · 随机填写|Demo: fill randomly]]</span><button class="btn sec" data-act="svGo" data-arg="todo">[[返回|Back]]</button><button class="btn pri" data-act="funSubmit">[[查看结果|See my result]]</button></div>
+</div>
+</template>
+
+<!-- 趣味测试：结果 -->
+<template id="p-funres">
+<div class="page fade"><div class="wrap" style="width:min(760px,100%)">
+  <div class="ph"><p style="font-size:13px">[[自我了解结果|Self-test result]]，{{date}}</p><h2>{{name}}</h2></div>
+  <div class="res">{{body}}</div>
+  <div class="strip" style="margin-top:18px"><span class="ico">{{iLock}}</span><div class="grow"><b>[[只有你能看到这份结果|Only you can see this result]]</b><small>[[它不会发送给学校，也不会影响任何评估。测试结果仅供自我了解，不是诊断。|It isn’t sent to NTU and doesn’t affect any assessment. It’s for self-understanding, not a diagnosis.]]</small></div></div>
+  <div style="display:flex;gap:10px;margin-top:18px">{{more}}<button class="btn sec" data-act="svGo" data-arg="todo">[[回到心理问卷|Back to questionnaires]]</button></div>
+</div></div>
+</template>
+
+<!-- AI 访谈（问卷未完成时 / 访谈记录） -->
+<template id="p-ai">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[AI 访谈|Talk with Xiaoyu]]</h2><p>[[小屿是 AI 访谈助手，会在你完成问卷后陪你聊聊最近的生活。每次对话都保存在这里。|Xiaoyu is an AI companion who chats with you after the questionnaires. Every chat is saved here.]]</p></div>
+  {{cur}}
+  <div class="sect">[[我的访谈记录|My conversations]]</div>
+  <div class="panel">{{items}}</div>
+</div></div>
+</template>
+
+<!-- 帮助中心 -->
+<template id="p-help">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[帮助中心|Help]]</h2><p>[[需要帮助的时候，这些人随时在|When you need help, these people are here]]</p></div>
+  <div class="hcards">
+    <div class="hc urgent"><b>[[新加坡援人协会 SOS|Samaritans of Singapore (SOS)]]</b><a class="num tel" href="tel:1767">1767</a><small>[[24 小时，情绪困扰与自杀预防|24 hours · emotional distress and suicide prevention]]</small></div>
+    <div class="hc urgent"><b>mindline</b><a class="num tel" href="tel:1771">1771</a><small>[[24 小时，心理健康支持|24 hours · mental health support]]</small></div>
+    <div class="hc"><b>[[紧急情况|Emergency]]</b><a class="num tel" href="tel:995">995</a><small>[[生命安全受到威胁时|When life is at risk]]</small></div>
+    <div class="hc"><b>[[大学心理咨询中心 UCC|University Counselling Centre]]</b><span class="num" style="font-size:18px">[[工作日 8:30–17:30|Weekdays 8:30–17:30]]</span><small>{{ucc}}</small><button class="btn soft sm" data-act="go" data-arg="book" style="margin-top:10px">{{iCal}}[[预约咨询|Book a session]]</button></div>
+  </div>
+  <div class="sect">[[常见问题|Common questions]]</div>
+  <div class="panel faq">
+    <details data-k="q0"><summary>[[我的回答谁能看到？|Who can see my answers?]]</summary><p>[[学校任务的问卷和访谈会提供给大学心理咨询中心的专业老师，用于安排后续支持；不同岗位的老师只能看到职责范围内的信息。「自我了解」的结果只有你自己能看到。|Answers to NTU questionnaires and conversations go to professional staff at UCC to arrange support. Each staff member only sees what their role requires. Self-tests are visible only to you.]]</p></details>
+    <details data-k="q1"><summary>[[小屿是真人吗？|Is Xiaoyu a real person?]]</summary><p>[[不是。小屿是 AI 访谈助手，负责陪你完成访谈，不会替代专业老师的判断。如果你需要和真人聊，可以预约咨询。|No. Xiaoyu is an AI companion that guides the conversation. It never replaces a professional’s judgement. To talk to a person, book a counselling session.]]</p></details>
+    <details data-k="q2"><summary>[[问卷没做完就关掉了怎么办？|What if I close the page halfway?]]</summary><p>[[进度会自动保存。在截止日期前，从「个人中心」或「心理问卷」回来就能接着做。|Your progress saves automatically. Come back from My space or Questionnaires before the due date.]]</p></details>
+    <details data-k="q3"><summary>[[预约需要多久能确认？|How long does a booking take to confirm?]]</summary><p>[[所有预约都需要老师确认：提交的是申请，老师确认后才算约好。改期、取消也需要老师同意，通常 2 个工作日内回复，结果会通过站内消息和短信通知你。|Every booking is a request until a counsellor confirms it. Rescheduling and cancelling also need approval — usually within 2 working days. We’ll notify you in-app and by SMS.]]</p></details>
+  </div>
+  <div class="sect">[[协议与文件|Policies and documents]]</div>
+  <div class="panel">{{docs}}</div>
+  <div class="sect">[[关于我们|About]]</div>
+  <div class="panel" style="padding:18px 24px;color:var(--ink2)">[[灵屿是南洋理工大学大学心理咨询中心（UCC）使用的心理健康普测与服务平台，由扶光心舍提供技术支持。小屿是平台中的 AI 交互角色，负责陪你完成访谈，不替代专业人员的判断。|CORISLE is the wellbeing check and support platform used by NTU’s University Counselling Centre (UCC), built by Cormira. Xiaoyu is the AI companion who guides the conversation and never replaces a professional’s judgement.]]</div>
+</div></div>
+</template>
+
+<!-- 个人信息 -->
+<template id="p-profile">
+<div class="page fade"><div class="wrap" style="width:min(760px,100%)">
+  <div class="ph"><h2>[[个人信息|My profile]]</h2><p>[[学号和学校信息与学校名单一致，如需修改请联系 UCC|Your matric number and university details come from NTU records. Contact UCC to change them.]]</p></div>
+  <div class="panel kvp">{{base}}</div>
+  <p class="note" style="margin:10px 0 0">{{iLock}} [[手机号与账号绑定，不支持自行修改。如需更换，请联系 UCC，由老师在后台为你修改：|Your mobile number is tied to your account and can’t be changed here. Contact UCC and staff will update it: ]]{{ucc}}</p>
+  <div class="sect">[[紧急联系人|Emergency contacts]]</div>
+  <div class="panel kvp">{{ec}}</div>
+</div></div>
+</template>
+
+<!-- 消息中心：独立页面 -->
+<template id="p-msgs">
+<div class="page fade"><div class="wrap" style="width:min(820px,100%)">
+  <button class="btn ghost sm" data-act="msgBack" style="margin:-8px 0 12px -12px">{{iLeft}}{{backTo}}</button>
+  <div class="ph" style="display:flex;justify-content:space-between;align-items:flex-end"><h2 style="margin:0">[[消息中心|Notifications]]</h2><button class="btn ghost sm" data-act="readAll">[[全部标为已读|Mark all as read]]</button></div>
+  <div class="tabs">{{tabs}}</div>
+  <div class="panel mlist">{{items}}</div>
+</div></div>
+</template>
+
+<!-- 老师主页 -->
+<template id="p-cpage">
+<div class="page fade"><div class="wrap" style="width:min(860px,100%)">
+  <button class="btn ghost sm" data-act="back" style="margin:-8px 0 12px -12px">{{iLeft}}[[返回|Back]]</button>
+  <div class="cp-head">{{av}}<div class="grow"><h2>{{name}}</h2><p>{{role}}{{sep}}{{campus}}</p><div class="tg">{{tags}}</div></div>{{own}}</div>
+  <div class="panel" style="padding:18px 24px;color:var(--ink2);line-height:1.9">{{bio}}</div>
+  {{mine}}
+  <div class="sect">[[近 30 天可预约时间|Available in the next 30 days]]</div>
+  {{slots}}
+</div></div>
+</template>
+
+<!-- 我的访谈记录（1.0 访谈记录） -->
+<template id="p-talks">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[我的访谈记录|My conversations]]</h2><p>[[每次和小屿的对话都会保存在这里，可以继续、回看对话和卡片|Every chat with Xiaoyu is saved here — continue it, or look back at the conversation and your card]]</p></div>
+  <div class="panel">{{items}}</div>
+</div></div>
+</template>
+
+<!-- 我的问卷：要做的和做过的 -->
+<template id="p-myq">
+<div class="page fade"><div class="wrap">
+  <div class="ph" style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px"><div><h2>[[我的问卷|My questionnaires]]</h2><p>[[学校发给你的问卷，以及你做过的自我了解|Questionnaires from NTU, and self-tests you’ve taken]]</p></div><button class="btn sec sm" data-act="svGo" data-arg="todo">[[去心理问卷|Go to Questionnaires]]</button></div>
+  {{body}}
+</div></div>
+</template>
+
+<!-- 13 我的报告（1.0） -->
+<template id="p-report">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[我的报告|My reports]]</h2><p>[[每完成一次普测，小屿都会为你整理一份专属卡片，存放在这里，仅你自己可见|After each check, Xiaoyu writes you a card. They’re kept here and only you can see them.]]</p></div>
+  {{pending}}
+  <div class="panel">{{items}}</div>
+</div></div>
+</template>
+
+<!-- 14 预约中心 -->
+<template id="p-book">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[预约咨询|Book a counselling session]]</h2><p>[[选一个你方便的时间，和大学心理咨询中心的老师聊一聊|Pick a time that works for you to talk with a UCC counsellor]]</p></div>
+  {{own}}
+  <div class="tabs">{{tabs}}</div>
+  {{body}}
+</div></div>
+</template>
+
+<!-- 16 我的预约 -->
+<template id="p-mybook">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[我的预约|My appointments]]</h2><p>[[处理进度会同时通过站内消息和短信通知你|We’ll update you in-app and by SMS]]</p></div>
+  {{cur}}
+  {{chg}}
+  {{quota}}
+  <div class="sect">[[历史预约|Past appointments]]</div>
+  <div class="panel">{{hist}}</div>
+</div></div>
+</template>
+
+<!-- 19 心理园区 -->
+<template id="p-garden">
+<div class="page fade"><div class="wrap">
+  <div class="ph"><h2>[[心理园区|Wellbeing hub]]</h2><p>[[短视频、音频练习和本校活动，随时来看看|Short videos, audio practices and what’s on at NTU]]</p></div>
+  {{hero}}
+  {{body}}
+</div></div>
+</template>
+
+<!-- 反馈（1.0） -->
+<template id="p-fb">
+<div class="page fade"><div class="wrap" style="width:min(680px,100%)">
+  <div class="ph"><h2>[[访谈反馈|Feedback]]</h2><p>[[你的反馈会用来改进小屿，大约需要 2 分钟|Help us improve Xiaoyu. It takes about 2 minutes.]]</p></div>
+  <div class="panel" style="padding:20px 24px">{{qs}}
+    <div class="rq"><p>[[还有什么想说的（选填）|Anything else? (optional)]]</p><textarea class="inp" data-bind="fbText" placeholder="[[哪里让你觉得别扭、哪里让你觉得舒服，都可以写|What felt awkward, what felt right — anything helps]]"></textarea></div>
+    <button class="btn pri" data-act="fbSubmit">[[提交反馈|Send feedback]]</button> <span class="zap" data-act="zFb">⚡ [[演示 · 填写示例反馈|Demo: fill sample]]</span>
+  </div>
+</div></div>
+</template>
+
+<!-- ================= 弹窗 ================= -->
+<template id="m-pause">
+<div class="mo"><img class="mascot" src="{{M}}" alt="">
+  <h3>[[先停一下？|Take a break?]]</h3>
+  <p>[[没关系，聊到哪里都会保留着。<br>在 {{until}} 前回来，就能从这里接着聊。|No problem — everything so far is saved.<br>Come back before {{until}} to pick up right here.]]</p>
+  <div class="acts"><button class="btn sec" data-act="pauseOk">[[在这里歇一会儿|Rest here for now]]</button><button class="btn pri" data-act="laterOk">[[回个人中心|Back to My space]]</button></div>
+  <button class="btn ghost sm" data-act="close" style="margin-top:12px">[[不用了，继续聊|Never mind, keep chatting]]</button>
+</div>
+</template>
+
+<template id="m-later">
+<div class="mo"><img class="mascot" src="{{M}}" alt="">
+  <h3>[[要稍后继续吗？|Finish later?]]</h3>
+  <p>[[你的作答已经自动保存。<br>在 {{until}} 前，从个人中心的普测卡片回来就能继续。|Your answers are saved.<br>Come back from the card in My space any time before {{until}}.]]</p>
+  <div class="acts"><button class="btn sec" data-act="close">[[留在这里|Stay here]]</button><button class="btn pri" data-act="laterOk">[[回到个人中心|Back to My space]]</button></div>
+</div>
+</template>
+
+<template id="m-safe">
+<div class="mo"><div class="okmark" style="background:var(--warn-bg);color:var(--warn)">{{iShield}}</div>
+  <h3>[[你现在安全吗？|Are you safe right now?]]</h3>
+  <p>[[谢谢你如实作答。你不需要一个人扛着，下面的人随时愿意听你说。|Thank you for answering honestly. You don’t have to carry this alone — these people are ready to listen.]]</p>
+  <div class="box2">
+    <div><b>[[新加坡援人协会 SOS|Samaritans of Singapore (SOS)]]</b><span><a class="tel" href="tel:1767">1767</a> · [[24 小时|24 hours]]</span></div>
+    <div><b>mindline</b><span><a class="tel" href="tel:1771">1771</a> · [[24 小时|24 hours]]</span></div>
+    <div><b>[[你的紧急联系人|Your emergency contact]] {{ec}}</b><span>{{ecTel}}</span></div>
+    <div><b>[[紧急情况|Emergency]]</b><span><a class="tel" href="tel:995">995</a></span></div>
+  </div>
+  <p style="font-size:13px">[[大学心理咨询中心的老师也会尽快和你联系。|A UCC counsellor will also contact you soon.]]</p>
+  {{oops}}
+  <div class="acts"><button class="btn sec" data-act="callUcc">{{iPhone}}[[请 UCC 今天联系我|Ask UCC to call me today]]</button><button class="btn pri" data-act="close">[[我知道了，继续作答|I understand, continue]]</button></div>
+</div>
+</template>
+
+<template id="m-done">
+<div class="mo"><button class="x" data-act="close" aria-label="close">{{iX}}</button><img class="mascot" src="{{M}}" alt="">
+  <h3>[[谢谢你的时间|Thank you for your time]]</h3>
+  <p>[[这次我们一起完成了 {{nsc}} 份问卷，聊了 {{rounds}} 轮，用了 {{mins}} 分钟。<br>{{reNote}}你愿意认真回答这些问题，本身就是一件不容易的事。|Together we finished {{nsc}} questionnaire(s) and {{rounds}} rounds of conversation in {{mins}} minutes.<br>{{reNote}}Taking these questions seriously isn’t easy — thank you.]]</p>
+  <div class="acts"><button class="btn sec" data-act="doneFb">[[填写反馈|Give feedback]]</button><button class="btn pri" data-act="doneCard">[[查看我的卡片|View my card]]</button></div>
+  <div class="foot">[[如果近期感到持续困扰，可以随时拨打 24 小时热线 1767|If things feel hard for a while, call 1767 any time, 24 hours]]</div>
+</div>
+</template>
+
+<template id="m-invite">
+<div class="mo"><img class="mascot" src="{{M}}" alt="">
+  <h3>[[想和老师聊一聊吗？|Would you like to talk to someone?]]</h3>
+  <p>[[大学心理咨询中心的老师可以和你约一次时间，听你说说最近的情况。<br>选一个你方便的时间就好，聊什么由你决定。|A counsellor at UCC can set aside time to hear how things have been.<br>Pick a time that suits you — what you talk about is up to you.]]</p>
+  {{help}}
+  <div class="acts"><button class="btn sec" data-act="inviteNo">[[暂不需要|Not now]]</button><button class="btn pri" data-act="inviteGo">[[选个时间|Choose a time]]</button></div>
+  <div class="foot">[[之后改变主意，可以随时在顶部「预约咨询」里预约|Changed your mind later? Book anytime from “Counselling” at the top]]</div>
+</div>
+</template>
+
+<template id="m-card">
+<div class="mo kcard"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <div class="kh"><h3>[[我的卡片|My card]]</h3><small>{{date}} [[· 小屿为你整理|· written by Xiaoyu]]</small></div>
+  <div class="ks">{{secs}}</div>
+  <div class="qr">{{qr}}<div>[[这张卡片是根据你这次普测的内容整理的，只有你自己能看到。扫码可以在手机上随时打开（演示中为示意二维码）。|This card is based on your check and only you can see it. Scan to open it on your phone (sample QR in this demo).]]</div></div>
+  <div class="acts"><button class="btn soft sm" data-act="cardChat">[[查看对话记录|View conversation]]</button><button class="btn soft sm" data-act="modal" data-arg="share">{{iShare}}[[生成分享图|Create share image]]</button><button class="btn pri sm" data-act="toast" data-arg="saved">{{iDl}}[[下载卡片|Download]]</button></div>
+</div>
+</template>
+
+<template id="m-share">
+<div class="mo"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <h3 style="margin-top:0">[[分享我的卡片|Share my card]]</h3>
+  <div class="share"><img class="mascot s" src="{{M}}" alt="" style="margin:0 auto"><b>[[来自灵屿|From CORISLE]]</b><p>{{line}}</p><small style="color:var(--mute2)">[[灵屿 · 南洋理工大学心理健康普测|CORISLE · NTU wellbeing check]]</small></div>
+  <p style="font-size:13px">[[分享图对每位同学都一样，不包含你的卡片内容、作答和对话。链接 7 天内有效。|The share image is the same for everyone and never includes your card, answers or conversation. Links expire after 7 days.]]</p>
+  <div class="acts"><button class="btn sec" data-act="toast" data-arg="linkCopied">[[复制链接|Copy link]]</button><button class="btn pri" data-act="toast" data-arg="imgSaved">[[保存分享图|Save image]]</button></div>
+</div>
+</template>
+
+<template id="m-trans">
+<div class="mo l"><button class="x" data-act="close" aria-label="close">{{iX}}</button><h3>[[对话记录|Conversation]]</h3>{{lines}}</div>
+</template>
+
+<template id="m-counsellor">
+<div class="mo l"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px">{{av}}<div><h3 style="margin:0">{{name}}</h3><small style="color:var(--mute2)">{{role}}，{{campus}}</small></div></div>
+  <p style="color:var(--ink2)">{{bio}}</p>
+  <div class="tg" style="margin-bottom:18px">{{tags}}</div>
+  <div class="lab" style="font-size:13px;color:var(--ink)">[[近期可预约时间|Upcoming times]]</div>
+  {{slots}}
+</div>
+</template>
+
+<template id="m-submit">
+<div class="mo l"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <h3>{{mTitle}}</h3>
+  <div class="box2"><div><span>[[咨询师|Counsellor]]</span><b>{{name}}</b></div><div><span>[[时间|Time]]</span><b>{{when}}</b></div><div><span>[[类型|Type]]</span><b>{{kind}}</b></div></div>
+  <div class="fld"><div class="lab">[[咨询方式|How would you like to meet?]]</div><div class="seg">{{modes}}</div></div>
+  <div class="fld"><div class="lab">[[想聊的主题（可多选）|What would you like to talk about? (optional)]]</div><div class="chips">{{topics}}</div></div>
+  <div class="fld"><div class="lab">[[想先告诉老师的话（选填）|Anything you’d like the counsellor to know first? (optional)]]</div><textarea class="inp" data-bind="bkNote" id="bkNote" placeholder="[[比如最近困扰你的事|For example, what’s been on your mind]]">{{note}}</textarea></div>
+  <div class="tip" style="background:var(--bub);border-radius:10px;padding:10px 14px;margin:0">{{iInfo}}<span>[[提交后，你在学校任务里的问卷和访谈会分享给这位咨询师；「自我了解」的结果不会分享。提交的是预约申请，老师确认后才算约好，会通知你。|Your counsellor will see your NTU questionnaires and conversation — never your self-test results. It’s a request until your counsellor confirms it; we’ll let you know.]]</span></div>
+  <div class="acts"><button class="btn sec" data-act="close">[[返回|Back]]</button><button class="btn pri" data-act="bookSubmit">{{mBtn}}</button></div>
+</div>
+</template>
+
+<template id="m-booked">
+<div class="mo"><div class="okmark">{{iCheck}}</div>
+  <h3>{{title}}</h3>
+  <div class="box2"><div><span>[[咨询师|Counsellor]]</span><b>{{name}}</b></div><div><span>[[时间|Time]]</span><b>{{when}}</b></div></div>
+  <p>{{text}}</p>
+  <div class="acts"><button class="btn sec" data-act="go" data-arg="home">[[回到个人中心|Back to My space]]</button><button class="btn pri" data-act="go" data-arg="mybook">[[查看我的预约|View my appointments]]</button></div>
+</div>
+</template>
+
+<template id="m-doneS">
+<div class="mo"><div class="okmark">{{iCheck}}</div>
+  <h3>[[已提交|Submitted]]</h3>
+  <p>[[谢谢你，「{{tName}}」已经提交。|Thank you — “{{tName}}” has been submitted.]]{{reuseLine}}</p>
+  <div class="acts"><button class="btn pri" data-act="doneSOk">[[回到个人中心|Back to My space]]</button></div>
+</div>
+</template>
+
+<!-- 进入个人中心时的任务提醒（有新任务或未完成任务才弹） -->
+<template id="m-remind">
+<div class="mo"><img class="mascot" src="{{M}}" alt="">
+  <h3>{{title}}</h3>
+  <p>{{lead}}</p>
+  <div class="box2 rlist">{{rows}}</div>
+  <div class="acts"><button class="btn sec" data-act="close">[[稍后再说|Later]]</button></div>
+</div>
+</template>
+
+<template id="m-ec">
+<div class="mo l"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <h3>[[修改紧急联系人|Edit emergency contact]]</h3>
+  <div class="row3 fld"><input class="inp" data-bind="ec.name" value="{{name}}" placeholder="[[姓名|Name]]"><select class="inp" data-bind="ec.rel">{{rels}}</select><div class="pre">{{ccSel}}<input class="inp" data-bind="ec.tel" value="{{tel}}" maxlength="{{max}}" inputmode="numeric"></div></div>
+  {{err}}
+  <div class="acts"><button class="btn sec" data-act="close">[[取消|Cancel]]</button><button class="btn pri" data-act="ecSave">[[保存|Save]]</button></div>
+</div>
+</template>
+
+<!-- 老师调整了预约时间（后台主动改约） -->
+<template id="m-doc">
+<div class="mo docm"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <h3 style="margin-top:0">{{title}}</h3>
+  <p class="dmeta">{{meta}}</p>
+  <div class="consent doc">{{doc}}</div>
+  <div class="acts"><button class="btn pri" data-act="close">[[关闭|Close]]</button></div>
+</div>
+</template>
+
+<template id="m-info">
+<div class="mo"><div class="okmark" style="background:var(--bub);color:var(--gold2)">{{ico}}</div>
+  <h3>{{title}}</h3><p>{{body}}</p>
+  <div class="acts">{{btns}}</div>
+</div>
+</template>
+
+<template id="m-appr">
+<div class="mo"><div class="okmark">{{iCheck}}</div>
+  <h3>{{title}}</h3><p>{{body}}</p>
+  <p style="font-size:12.5px;color:var(--mute)">{{iPhone}} [[已同步短信通知|Also sent to you by SMS]]</p>
+  <div class="acts"><button class="btn pri" data-act="close">[[知道了|Got it]]</button></div>
+</div>
+</template>
+
+<template id="m-moved">
+<div class="mo"><div class="okmark" style="background:var(--pri-t);color:var(--gold2)">{{iCal}}</div>
+  <h3>[[老师调整了你的预约时间|Your counsellor changed the time]]</h3>
+  <div class="box2"><div><span>[[咨询师|Counsellor]]</span><b>{{name}}</b></div><div><span>[[原时间|Was]]</span><b style="text-decoration:line-through;color:var(--mute2)">{{old}}</b></div><div><span>[[新时间|Now]]</span><b>{{new}}</b></div></div>
+  <p>[[新时间可以的话，点「接受」就会生效；不方便的话，可以改期另选时间。|If the new time works, accept it. Otherwise, reschedule to pick another time.]]</p>
+  <div class="acts"><button class="btn sec" data-act="movedResch">[[改期|Reschedule]]</button><button class="btn pri" data-act="movedOk">[[接受新时间|Accept new time]]</button></div>
+</div>
+</template>
+
+<!-- 改期确认：原预约作废、时段释放 -->
+<template id="m-resch">
+<div class="mo"><h3 style="margin-top:0">[[确定要改期吗？|Reschedule this appointment?]]</h3>
+  <p>{{body}}</p>
+  <div class="acts"><button class="btn sec" data-act="close">[[不改了|Keep it]]</button><button class="btn pri" data-act="reschOk">[[确定改期|Reschedule]]</button></div>
+</div>
+</template>
+
+<!-- 重新对话 -->
+<template id="m-redo">
+<div class="mo"><img class="mascot" src="{{M}}" alt="">
+  <h3>[[和小屿重新聊一次？|Start a new chat with Xiaoyu?]]</h3>
+  <p>[[有效期内可以重新对话。上一轮会保留在访谈记录里，这一轮完成后会生成新的卡片。|You can start again before the due date. The last chat stays in your history, and you’ll get a new card when this one ends.]]</p>
+  <div class="acts"><button class="btn sec" data-act="close">[[再想想|Not now]]</button><button class="btn pri" data-act="redoOk">[[开始新一轮|Start again]]</button></div>
+</div>
+</template>
+
+<template id="m-switch">
+<div class="mo"><img class="mascot" src="{{M}}" alt="">
+  <h3>[[先做哪一项？|Which one first?]]</h3>
+  <p>[[你还有一项没做完：「{{cur}}」（{{prog}}）。<br>两边的进度都会保存，随时可以回来。|You still have “{{cur}}” in progress ({{prog}}).<br>Both will be saved, so you can come back anytime.]]</p>
+  <div class="acts"><button class="btn sec" data-act="switchKeep">[[继续「{{cur}}」|Continue “{{cur}}”]]</button><button class="btn pri" data-act="switchGo">[[先做这一项|Do this one first]]</button></div>
+</div>
+</template>
+
+<template id="m-cancel">
+<div class="mo"><h3 style="margin-top:0">[[取消这次预约？|Cancel this appointment?]]</h3>
+  <p>{{body}}</p>
+  <div class="acts"><button class="btn sec" data-act="close">[[保留预约|Keep it]]</button><button class="btn pri" data-act="cancelOk">[[取消预约|Cancel appointment]]</button></div>
+</div>
+</template>
+
+<template id="m-change">
+<div class="mo l"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <h3>[[申请更换咨询师|Request a different counsellor]]</h3>
+  <p style="font-size:13.5px">[[更换需要你现在的咨询师 {{cur}} 同意。通过后，你需要像第一次一样，先和新的老师进行一次预咨询，再继续后面的咨询。审批期间不影响你已有的预约。|{{cur}}, your current counsellor, needs to approve. Once approved, you’ll start again with an intake chat with a new counsellor. Existing appointments aren’t affected while you wait.]]</p>
+  <div class="fld"><div class="lab">[[更换原因|Reason]]</div><div class="chips">{{reasons}}</div></div>
+  <div class="acts"><button class="btn sec" data-act="close">[[返回|Back]]</button><button class="btn pri" data-act="chgSubmit">[[提交申请|Send request]]</button></div>
+</div>
+</template>
+
+<template id="m-gd">
+<div class="mo gdm"><button class="x" data-act="close" aria-label="close">{{iX}}</button>
+  <div style="font-size:12px;color:var(--mute2)">{{src}}</div>
+  <h3 style="margin-top:6px">{{title}}</h3>
+  {{body}}
+  <div class="prog">{{prog}}</div><small style="color:var(--mute)">{{stepLbl}}</small>
+  <div class="acts">{{btns}}</div>
+</div>
+</template>
+
+<template id="m-help">
+<div class="mo"><h3 style="margin-top:0">[[帮助中心|Get help]]</h3>
+  <p>[[普测中遇到问题，或需要真人支持，都可以通过以下方式联系：|If you run into a problem or want to talk to a person, reach out here:]]</p>
+  <div class="box2">
+    <div><b>[[新加坡援人协会 SOS|Samaritans of Singapore (SOS)]]</b><span><a class="tel" href="tel:1767">1767</a> · [[24 小时|24 hours]]</span></div>
+    <div><b>mindline</b><span><a class="tel" href="tel:1771">1771</a> · [[24 小时|24 hours]]</span></div>
+    <div><b>[[大学心理咨询中心 UCC|University Counselling Centre]]</b><span>[[工作日 8:30–17:30|Weekdays 8:30 am–5:30 pm]]</span></div>
+    <div><b>[[紧急情况|Emergency]]</b><span><a class="tel" href="tel:995">995</a></span></div>
+  </div>
+  <div class="acts"><button class="btn pri" data-act="close">[[知道了|Got it]]</button></div>
+</div>
+</template>
+
+<template id="m-about">
+<div class="mo"><img class="mascot" src="{{M}}" alt="">
+  <h3>[[关于我们|About]]</h3>
+  <p>[[灵屿是南洋理工大学大学心理咨询中心（UCC）使用的心理健康普测与服务平台，由扶光心舍提供技术支持。小屿是平台中的 AI 交互角色，负责陪你完成访谈，不替代专业人员的判断。|CORISLE is the wellbeing check and support platform used by NTU’s University Counselling Centre (UCC), built by Cormira. Xiaoyu is the AI companion who guides the conversation — it never replaces a professional’s judgement.]]</p>
+  <div class="acts"><button class="btn pri" data-act="close">[[知道了|Got it]]</button></div>
+</div>
+</template>
+
+<template id="m-fbok">
+<div class="mo"><div class="okmark">{{iCheck}}</div>
+  <h3>[[谢谢你的反馈|Thanks for your feedback]]</h3><p>[[小屿会继续改进|It helps Xiaoyu get better]]</p>
+  <div class="acts"><button class="btn sec" data-act="go" data-arg="talks">[[查看访谈记录|Past check-ins]]</button><button class="btn pri" data-act="go" data-arg="home">[[回到个人中心|Back to My space]]</button></div>
+</div>
+</template>
