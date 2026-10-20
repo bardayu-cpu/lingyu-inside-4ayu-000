@@ -156,6 +156,21 @@ with sync_playwright() as p:
         E('(a=>{ACT.mo(a);render()})', 'ivIk:' + ids['iv'])
         chk(E('S.mo') is None and E('AUDIT.length') == before, 'R17 administrator cannot invoke invitation summary action')
 
+    if want('COPY-STU'):
+        page.goto(Path(os.environ['STU_HTML']).as_uri())
+        chk('我是小屿，可以和你聊聊最近的生活' in page.locator('#app').inner_text(), 'COPY-STU launch explains purpose in plain Chinese')
+        chk('完整链路' not in page.locator('#app').inner_text() and '每一个真实的自己' not in page.locator('#app').inner_text(), 'COPY-STU launch removes system jargon and grand claims')
+        E("reset('A');prepare('chat');S.fast=true;userSay(DATA.crisisDemo);render()")
+        page.wait_for_timeout(100)
+        chk('无法提供现场帮助' in page.locator('#app').inner_text() and '请立即联系' in page.locator('#app').inner_text(), 'COPY-STU crisis reply clearly names AI limits and immediate help action')
+        E("reset('A');prepare('chat');S.task.scaleLv=1;S.task.concern=0;S.task.crisis=false;finish();render()")
+        chk('谢谢你的回答' in page.locator('#modal').inner_text() and '本身就是一件不容易的事' not in page.locator('#modal').inner_text(), 'COPY-STU ordinary completion uses concrete next steps')
+        E("S.modal=null;S.page='mybook';render()")
+        chk('目前没有预约' in page.locator('#app').inner_text() and '提交预约申请' in page.locator('#app').inner_text(), 'COPY-STU booking empty state explains available action')
+        E("prepare('help');render()")
+        page.locator('details[data-k=q3] summary').click()
+        chk('提交预约申请后，请等待老师确认' in page.locator('#app').inner_text(), 'COPY-STU help distinguishes request, counsellor confirmation and accepted new time')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 

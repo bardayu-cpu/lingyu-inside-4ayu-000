@@ -57,19 +57,19 @@
 <template id="p-launch">
 <div class="launch fade">
   <div class="ln-art"><img src="{{BG}}" alt="">
-    <div class="ln-bub">[[我会陪你看见每一个真实的自己|I’ll be here as you discover the real you]]</div>
-    <div class="ln-cap"><b>[[小屿|Xiaoyu]]</b>[[灵屿系统访谈智能体|CORISLE’s AI interview companion]]</div>
+    <div class="ln-bub">[[我是小屿，可以和你聊聊最近的生活|I’ll be here as you discover the real you]]</div>
+    <div class="ln-cap"><b>[[小屿|Xiaoyu]]</b>[[灵屿 AI 访谈助手|CORISLE’s AI interview companion]]</div>
   </div>
   <div class="ln-top">
     <div class="ln-host"><span class="crest">NTU</span><b>[[南洋理工大学|Nanyang Technological University]]</b><i></i><span>[[大学心理咨询中心 UCC|University Counselling Centre]]</span></div>
     <span class="sp"></span>{{lang}}
   </div>
   <div class="ln-main">
-    <h1>[[认识自己，<br>是一切成长的开始|Getting to know yourself<br>is where all growth begins]]</h1>
+    <h1>[[了解自己的近况，<br>需要时找到支持|Getting to know yourself<br>is where all growth begins]]</h1>
     <p class="ln-sub">[[心理普测 · AI 访谈 · 咨询预约 · 心理园区|Wellbeing check · Talk with Xiaoyu · Counselling · Wellbeing hub]]</p>
     <button class="btn pri lg" data-act="start">[[开始体验|Get started]]</button>
   </div>
-  <div class="ln-foot"><span>[[由|Powered by]]</span><img src="{{M}}" alt=""><b>[[灵屿|CORISLE]]</b><span>[[提供技术支持|]]</span><i></i><span>[[一站式群体心理健康智能筛查与服务协同系统 · 以 AI 补全情境线索，将群体评估、专业判断与后续支持连成一条完整链路。|One platform for campus mental health screening and support · AI fills in the context, linking screening, professional judgement and follow-up support.]]</span></div>
+  <div class="ln-foot"><span>[[由|Powered by]]</span><img src="{{M}}" alt=""><b>[[灵屿|CORISLE]]</b><span>[[提供技术支持|]]</span><i></i><span>[[校园心理健康服务平台 · 完成问卷和访谈、预约心理咨询，也可以看看放松练习和校园活动。|One platform for campus mental health screening and support · AI fills in the context, linking screening, professional judgement and follow-up support.]]</span></div>
 </div>
 </template>
 
@@ -118,7 +118,7 @@
 <div class="center fade"><div class="ob">
   {{steps}}
   <h2>[[知情同意书|Informed consent]]</h2>
-  <p class="sub">[[这是一段属于你的探索旅程，没有对错之分，可以随时暂停。开始前，请完整阅读以下内容。|A journey that’s all about you — no right or wrong answers, and you can pause anytime. Please read the full statement first.]]</p>
+  <p class="sub">[[接下来会有问卷和 AI 访谈，请按实际情况回答。中途可以暂停。开始前，请阅读以下说明。|A journey that’s all about you — no right or wrong answers, and you can pause anytime. Please read the full statement first.]]</p>
   <div class="consent" id="consentBox" data-keep>
     {{doc}}
     <p style="color:var(--mute)">[[知情同意书 v2.0 · 你的同意时间与版本将被记录|Consent statement v2.0. The time and version of your consent will be recorded.]]</p>
@@ -340,7 +340,7 @@
 <!-- 帮助中心 -->
 <template id="p-help">
 <div class="page fade"><div class="wrap">
-  <div class="ph"><h2>[[帮助中心|Help]]</h2><p>[[需要帮助的时候，这些人随时在|When you need help, these people are here]]</p></div>
+  <div class="ph"><h2>[[帮助中心|Help]]</h2><p>[[需要帮助时，可以联系以下机构或老师|When you need help, these people are here]]</p></div>
   <div class="hcards">
     <div class="hc urgent"><b>[[新加坡援人协会 SOS|Samaritans of Singapore (SOS)]]</b><a class="num tel" href="tel:1767">1767</a><small>[[24 小时，情绪困扰与自杀预防|24 hours · emotional distress and suicide prevention]]</small></div>
     <div class="hc urgent"><b>mindline</b><a class="num tel" href="tel:1771">1771</a><small>[[24 小时，心理健康支持|24 hours · mental health support]]</small></div>
@@ -352,7 +352,7 @@
     <details data-k="q0"><summary>[[我的回答谁能看到？|Who can see my answers?]]</summary><p>[[学校任务的问卷和访谈会提供给大学心理咨询中心的专业老师，用于安排后续支持；不同岗位的老师只能看到职责范围内的信息。「自我了解」的结果只有你自己能看到。|Answers to NTU questionnaires and conversations go to professional staff at UCC to arrange support. Each staff member only sees what their role requires. Self-tests are visible only to you.]]</p></details>
     <details data-k="q1"><summary>[[小屿是真人吗？|Is Xiaoyu a real person?]]</summary><p>[[不是。小屿是 AI 访谈助手，负责陪你完成访谈，不会替代专业老师的判断。如果你需要和真人聊，可以预约咨询。|No. Xiaoyu is an AI companion that guides the conversation. It never replaces a professional’s judgement. To talk to a person, book a counselling session.]]</p></details>
     <details data-k="q2"><summary>[[问卷没做完就关掉了怎么办？|What if I close the page halfway?]]</summary><p>[[进度会自动保存。在截止日期前，从「个人中心」或「心理问卷」回来就能接着做。|Your progress saves automatically. Come back from My space or Questionnaires before the due date.]]</p></details>
-    <details data-k="q3"><summary>[[预约需要多久能确认？|How long does a booking take to confirm?]]</summary><p>[[所有预约都需要老师确认：提交的是申请，老师确认后才算约好。改期、取消也需要老师同意，通常 2 个工作日内回复，结果会通过站内消息和短信通知你。|Every booking is a request until a counsellor confirms it. Rescheduling and cancelling also need approval — usually within 2 working days. We’ll notify you in-app and by SMS.]]</p></details>
+    <details data-k="q3"><summary>[[预约需要多久能确认？|How long does a booking take to confirm?]]</summary><p>[[提交预约申请后，请等待老师确认，通常 2 个工作日内回复。结果会通过站内消息和短信通知你。已确认的预约如需改期或取消，也要先征得老师同意；老师提出的新时间则需要你接受。|Every booking is a request until a counsellor confirms it. Rescheduling and cancelling also need approval — usually within 2 working days. We’ll notify you in-app and by SMS.]]</p></details>
   </div>
   <div class="sect">[[协议与文件|Policies and documents]]</div>
   <div class="panel">{{docs}}</div>
@@ -413,7 +413,7 @@
 <!-- 13 我的报告（1.0） -->
 <template id="p-report">
 <div class="page fade"><div class="wrap">
-  <div class="ph"><h2>[[我的报告|My reports]]</h2><p>[[每完成一次普测，小屿都会为你整理一份专属卡片，存放在这里，仅你自己可见|After each check, Xiaoyu writes you a card. They’re kept here and only you can see them.]]</p></div>
+  <div class="ph"><h2>[[我的报告|My reports]]</h2><p>[[每次普测结束后的卡片都保存在这里，只有你自己能看到|After each check, Xiaoyu writes you a card. They’re kept here and only you can see them.]]</p></div>
   {{pending}}
   <div class="panel">{{items}}</div>
 </div></div>
@@ -466,7 +466,7 @@
 <div class="mo"><img class="mascot" src="{{M}}" alt="">
   <h3>[[先停一下？|Take a break?]]</h3>
   <p>[[没关系，聊到哪里都会保留着。<br>在 {{until}} 前回来，就能从这里接着聊。|No problem — everything so far is saved.<br>Come back before {{until}} to pick up right here.]]</p>
-  <div class="acts"><button class="btn sec" data-act="pauseOk">[[在这里歇一会儿|Rest here for now]]</button><button class="btn pri" data-act="laterOk">[[回个人中心|Back to My space]]</button></div>
+  <div class="acts"><button class="btn sec" data-act="pauseOk">[[暂停对话|Rest here for now]]</button><button class="btn pri" data-act="laterOk">[[回个人中心|Back to My space]]</button></div>
   <button class="btn ghost sm" data-act="close" style="margin-top:12px">[[不用了，继续聊|Never mind, keep chatting]]</button>
 </div>
 </template>
@@ -482,7 +482,7 @@
 <template id="m-safe">
 <div class="mo"><div class="okmark" style="background:var(--warn-bg);color:var(--warn)">{{iShield}}</div>
   <h3>[[你现在安全吗？|Are you safe right now?]]</h3>
-  <p>[[谢谢你如实作答。你不需要一个人扛着，下面的人随时愿意听你说。|Thank you for answering honestly. You don’t have to carry this alone — these people are ready to listen.]]</p>
+  <p>[[如果你现在有伤害自己的想法，或觉得不安全，请联系下面的热线或紧急联系人。|Thank you for answering honestly. You don’t have to carry this alone — these people are ready to listen.]]</p>
   <div class="box2">
     <div><b>[[新加坡援人协会 SOS|Samaritans of Singapore (SOS)]]</b><span><a class="tel" href="tel:1767">1767</a> · [[24 小时|24 hours]]</span></div>
     <div><b>mindline</b><span><a class="tel" href="tel:1771">1771</a> · [[24 小时|24 hours]]</span></div>
@@ -498,7 +498,7 @@
 <template id="m-done">
 <div class="mo"><button class="x" data-act="close" aria-label="close">{{iX}}</button><img class="mascot" src="{{M}}" alt="">
   <h3>[[谢谢你的时间|Thank you for your time]]</h3>
-  <p>[[这次我们一起完成了 {{nsc}} 份问卷，聊了 {{rounds}} 轮，用了 {{mins}} 分钟。<br>{{reNote}}你愿意认真回答这些问题，本身就是一件不容易的事。|Together we finished {{nsc}} questionnaire(s) and {{rounds}} rounds of conversation in {{mins}} minutes.<br>{{reNote}}Taking these questions seriously isn’t easy — thank you.]]</p>
+  <p>[[这次完成了 {{nsc}} 份问卷和 {{rounds}} 轮对话，共用时 {{mins}} 分钟。<br>{{reNote}}谢谢你的回答。你可以查看卡片，也可以填写使用反馈。|Together we finished {{nsc}} questionnaire(s) and {{rounds}} rounds of conversation in {{mins}} minutes.<br>{{reNote}}Taking these questions seriously isn’t easy — thank you.]]</p>
   <div class="acts"><button class="btn sec" data-act="doneFb">[[填写反馈|Give feedback]]</button><button class="btn pri" data-act="doneCard">[[查看我的卡片|View my card]]</button></div>
   <div class="foot">[[如果近期感到持续困扰，可以随时拨打 24 小时热线 1767|If things feel hard for a while, call 1767 any time, 24 hours]]</div>
 </div>
