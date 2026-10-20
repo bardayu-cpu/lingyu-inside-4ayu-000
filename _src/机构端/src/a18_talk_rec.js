@@ -24,7 +24,7 @@ function recPage() { const R = S.rec, edit = R.id && TALKS.find(t => t.id === R.
   const its = myItems().filter(x => R.sids.includes(x.sid) && x.st === 'open' && itDue(x)), fw = forcedWhy(R), sis = sisDef(R);
   const first = !R.prev || !R.same, lockC = edit && !edit.draft && recLocked(edit);
   const shareCand = R.spick != null ? TALKERS().filter(u => u !== me() && !R.shares.some(x => x.to === u) && (!R.spick || ST(u).name.includes(R.spick))).sort((a, b) => (STAFF[a].role === 'L1' && staffCols(a).includes((studs[0] || {}).college) ? 0 : 1) - (STAFF[b].role === 'L1' && staffCols(b).includes((studs[0] || {}).college) ? 0 : 1)).slice(0, 6) : [];
-  return `<div class="card recp"><div class="crumb"><button class="lnk" data-act="recBack">谈心</button> / ${title}${R.dirty ? '<small class="note">· 有未保存的修改</small>' : ''}<span class="sp"></span><span class="note">草稿不完成任务</span>${edit && !edit.draft ? '' : '<button class="btn sec" data-act="recSave" data-arg="draft">保存草稿</button>'}<button class="btn pri" data-act="recSave" data-arg="">保存</button></div>
+  return `<div class="card recp"><div class="crumb"><button class="lnk" data-act="recBack">谈心</button> / ${title}${R.dirty ? '<small class="note">· 有未保存的修改</small>' : ''}<span class="sp"></span><span class="note">保存草稿不会完成谈心任务</span>${edit && !edit.draft ? '' : '<button class="btn sec" data-act="recSave" data-arg="draft">保存草稿</button>'}<button class="btn pri" data-act="recSave" data-arg="">保存</button></div>
     ${lockC ? `<p class="note warn">这条记录已超过 24 小时${edit.corrOk ? '，中心已批准更正，可以再改一次' : '，只能追加'}。</p>` : ''}
     <h4>必填 4 项<small class="note">谈话对象、谈话时间、方式、结果；其余都是选填</small></h4>
     <div class="fld"><label class="rq">谈话对象</label><div class="chips">${studs.map(s => `<span class="chip">${s.name}<small>${s.college}</small>${edit && !edit.draft ? '' : `<button class="lnk" data-act="rcDel" data-arg="${s.id}">×</button>`}</span>`).join('')}${edit && !edit.draft ? '' : `<button class="btn ghost xs" data-act="rcPick">${I('plus', 's')}${studs.length ? '加一位学生（多人谈话）' : '选择学生'}</button>`}</div>
@@ -51,11 +51,11 @@ function recPage() { const R = S.rec, edit = R.id && TALKS.find(t => t.id === R.
     <div class="fld"><label>分享给谁<small>默认只有你能看</small></label>${R.shares.map((x, i) => `<div class="shr"><b>${ST(x.to).name}</b><small>${tagOf(x.to)}${x.off ? ' · 已收回' : ''}</small><span class="opts">${PARTS.map(([p, n]) => `<button class="${x.parts.includes(p) ? 'on' : ''}" data-act="rcSP" data-arg="${i}|${p}">${n}</button>`).join('')}</span><select data-rsd="${i}">${[7, 30, 90].map(d => `<option value="${d}" ${x.days === d ? 'selected' : ''}>${d} 天</option>`).join('')}</select><button class="lnk" data-act="rcSDel" data-arg="${i}">移除</button></div>`).join('')}
       ${R.spick != null ? `<div class="pickbox"><input class="in" style="width:200px" data-rb="spick" data-rr value="${esc(R.spick)}" placeholder="搜老师的名字">${shareCand.map(u => `<button class="btn sec xs" data-act="rcSAdd" data-arg="${u}">${ST(u).name} · ${tagOf(u)}</button>`).join('') || `<span class="note">没有找到 ${hintQ('tMiss')}</span>`}</div>` : `<button class="btn ghost xs" data-act="rcSPick">${I('plus', 's')}加一位</button>`}
       <small class="note">基本信息（对象、时间、方式、结果）总是带上；其余逐项勾，默认全勾。系统外的人、系统管理员、学生心理委员不能选。</small>
-      ${fw.length ? `<p class="note warn">${I('lock', 's')}这条记录会回传心理中心（${fw.join('、')}），不能移除。中心看到的是整条。</p>` : ''}</div>
+      ${fw.length ? `<p class="note warn">${I('lock', 's')}这条记录会按规则提供给心理中心（${fw.join('、')}），无法取消。心理中心可查看完整记录。</p>` : ''}</div>
     <div class="fld"><label>同步到学校 SIS</label><label class="ckl"><input type="checkbox" ${sis ? 'checked' : ''} data-act="rcSis"> 同步这条记录</label>${psych(R) && sis ? '<p class="note warn">这条记录含心理相关内容，同步后学校 SIS 的有权限人员都能看到。</p>' : ''}
       ${sis && first ? `<div class="grid g2"><div class="fld"><label>最初发现途径<small>SIS 必填</small></label><div class="opts">${['学生主动', '辅导员发现', '他人反映', '中心转来'].map(x => tog('src0', x, R.src0 === x)).join('')}</div></div><div class="fld"><label>最初发现时间<small>SIS 必填</small></label>${rin('t0', '例如：10/5', '120px')}</div></div>` : ''}
-      <small class="note">这一版只对齐字段，不真的对接 SIS。保存后 24 小时内可以改。</small></div>
-    <div class="crumb" style="border:0;margin-top:14px"><span class="sp"></span><span class="note">草稿不完成任务</span>${edit && !edit.draft ? '' : '<button class="btn sec" data-act="recSave" data-arg="draft">保存草稿</button>'}<button class="btn pri" data-act="recSave" data-arg="">保存</button></div></div>`; }
+      <small class="note">演示版仅展示 SIS 字段，不会向学校 SIS 发送数据。记录保存后 24 小时内可修改。</small></div>
+    <div class="crumb" style="border:0;margin-top:14px"><span class="sp"></span><span class="note">保存草稿不会完成谈心任务</span>${edit && !edit.draft ? '' : '<button class="btn sec" data-act="recSave" data-arg="draft">保存草稿</button>'}<button class="btn pri" data-act="recSave" data-arg="">保存</button></div></div>`; }
 
 /* 查看一条记录：按分享勾选的范围显示；写的人能管理分享 */
 function recView() { const t = TALKS.find(x => x.id === S.rv), v = recVis(t), mine = recOwner(t), see = p => v === 'full' || (Array.isArray(v) && v.includes(p)), none = '<span class="note">未分享</span>';
@@ -67,10 +67,10 @@ function recView() { const t = TALKS.find(x => x.id === S.rv), v = recVis(t), mi
     ${ids.length > 1 ? ids.filter(visP).map(id => `<h4>${SU(id).name} · 个人部分${(pp[id] || {}).absent ? '（未到场）' : ''}</h4>${see('situ') ? `<div class="sms">${esc((pp[id] || {}).txt) || '—'}</div>` : none}`).join('') : ''}
     ${see('situ') ? (t.adds || []).map(a => `<p class="tkadd">补充 · ${fmt(a.at)}${a.who ? ` · ${SU(a.who).name}` : ''}：${esc(a.t)}</p>`).join('') : ''}
     <div class="kv" style="margin-top:12px"><span>情况类型</span><b>${see('types') ? (t.types || []).join('、') || '—' : none}</b><span>学生表达的需要</span><b>${see('need') ? esc(t.need) || '—' : none}</b><span>下次谈心</span><b>${see('next') ? t.next || '不需要' : none}</b>${mine || v === 'full' ? `<span>希望中心介入</span><b>${t.center ? `是${t.cwhy ? '：' + esc(t.cwhy) : ''}` : '否'}</b>` : ''}</div>
-    ${t.risk ? `<p class="tkrisk">${I('alert', 's')}含安全相关内容 · 已报告（按命中等级处理）</p>` : ''}
+    ${t.risk ? `<p class="tkrisk">${I('alert', 's')}含安全相关内容 · 已提交风险报告</p>` : ''}
     ${see('situ') && (t.auxSignals || []).some(x => !x.who || visP(x.who)) ? `<p class="note">辅助信号（不单独报告）：${[...new Set((t.auxSignals || []).filter(x => !x.who || visP(x.who)).map(x => x.word))].map(esc).join('、')}</p>` : ''}
     ${mine ? `<h4>谁能看</h4>${(t.shares || []).length ? `<table class="t"><tr><th>分享给</th><th>能看</th><th>有效期</th><th></th></tr>${t.shares.map((x, i) => `<tr><td>${ST(x.to).name}<small>${tagOf(x.to)}</small></td><td>基本信息、${x.parts.map(p => PARTS.find(q => q[0] === p)[1]).join('、') || '—'}</td><td>${x.off ? '已收回' : shareOn(x) ? fmt(x.exp).split(' ')[0] + ' 前' : '已过期'}</td><td>${x.off ? '' : `<button class="btn ghost xs" data-act="shExt" data-arg="${t.id}|${i}">延长 30 天</button><button class="btn ghost xs" data-act="mo" data-arg="shEdit:${t.id}|${i}">改范围</button><button class="btn ghost xs" data-act="shOff" data-arg="${t.id}|${i}">收回</button>`}</td></tr>`).join('')}</table>` : '<p class="note">只有你能看。</p>'}
-      ${t.forced ? '<p class="note">这条记录回传心理中心，不能移除；被分享的人看不到「心理中心」这一项。</p>' : ''}<p class="note">同步 SIS：${t.sis ? '已勾选（这一版只对齐字段）' : '不同步'}${(t.hist || []).length ? ` · 已修改 ${t.hist.length} 次，修改前的内容保留` : ''}</p>` : ''}</div>`; }
+      ${t.forced ? '<p class="note">本条记录已按规则提供给心理中心。分享给其他老师的范围仍以「谁能看」中的设置为准。</p>' : ''}<p class="note">同步 SIS：${t.sis ? '已勾选（演示版不发送）' : '不同步'}${(t.hist || []).length ? ` · 已修改 ${t.hist.length} 次，修改前的内容保留` : ''}</p>` : ''}</div>`; }
 
 /* ---------- 保存 ---------- */
 const recRisk = R => TALK_RE.test([R.situ, R.need, R.topic, R.cwhy, ...Object.values(R.pp || {}).map(p => p.txt)].join(' '));
@@ -134,7 +134,7 @@ function recSave(draft) { const R = S.rec, edit = R.id && TALKS.find(t => t.id =
   if (first) t.savedAt = new Date(NOW); t.shares = shares;
   R.sids.forEach(id => { const p = t.pp[id]; if (p && p.txt && !p.savedAt && !draft) p.savedAt = new Date(NOW); });
   if (draft) { log(`保存谈话记录草稿（${tkId(t)}）`, SU(t.sid), { k: 'talkLog', noTl: 1, obj: '谈话记录' }); S.rec = null; S.tabs.talk = 'recs';
-    return toast(riskC || riskP.length ? '草稿已保存。草稿里有安全相关的表达，草稿不会自动报告；情况紧急请马上保存正式记录或报告紧急情况' : '草稿已保存，在「谈心记录」里可以接着写；草稿不完成任务'); }
+    return toast(riskC || riskP.length ? '草稿已保存。草稿中含安全相关内容，草稿不会自动报告；如有紧急危险，请立即使用「报告紧急情况」' : '草稿已保存，可在「谈心记录」中继续编辑；保存草稿不会完成谈心任务'); }
   talkSaveAux(t, R);
   /* 危机词：只对这次新出现的表达报告，不用老师再选 */
   const hitIds = cHit ? (multi ? (R.cw === 'all' ? R.sids.filter(id => !(R.pp[id] || {}).absent) : [R.cw]) : R.sids.slice()) : []; pHit.forEach(id => hitIds.includes(id) || hitIds.push(id));

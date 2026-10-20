@@ -26,12 +26,12 @@ function briefL3() {
   const st = [], od = STU.filter(s => ['L1', 'L2'].includes(s.stage) && overdue(s)), by = {};
   od.forEach(s => { const h = holder(s); (by[h] = by[h] || []).push(s); });
   Object.entries(by).forEach(([h, a]) => { const done = a.every(nudgedToday), t = done ? a.map(s => s.nudged).sort((x, y) => y - x)[0] : null;
-    st.push(Object.assign(it(`${ST(h).name}有 ${a.length} 位${ST(h).role === 'L1' ? '核验' : '复核'}超时，最久超时 ${dur(Math.max(...a.map(s => -leftOf(s))))}。`, done ? null : 'nudgeAll', h, '一键催办'), done ? { tag: `今日已催办 ${hrsTxt(t)}` } : {})); });
+    st.push(Object.assign(it(`${ST(h).name}有 ${a.length} 位${ST(h).role === 'L1' ? '核验' : '复核'}超时，最久超时 ${dur(Math.max(...a.map(s => -leftOf(s))))}。`, done ? null : 'nudgeAll', h, '批量催办'), done ? { tag: `今日已催办 ${hrsTxt(t)}` } : {})); });
   const fo = STU.filter(fOver); if (fo.length) st.push(it(`随访逾期（到期超过 2 天）的有 ${fo.length} 位。`, 'drill', 'students:fdueOver', '看名单'));
   const pool = BOOK.filter(b => b.st === 'pool'); if (pool.length) st.push(it(`预约待办池里有 ${pool.length} 个没人受理。`, 'drill', 'booking:pool', '去指派'));
   const ls = ['c1', 'c2', 'c3'].map(c => [c, pendL2(c)]).sort((a, b) => b[1] - a[1]), [mx, mn] = [ls[0], ls[ls.length - 1]];
   const nb = STU.filter(s => s.stage === 'L2' && s.queue === 'batch' && s.assignee === mx[0]).length;
-  if (mx[1] - mn[1] >= 5 && nb) st.push(it(`${ST(mx[0]).name} 手上 ${mx[1]} 件待处理，是团队里最多的；${ST(mn[0]).name} 只有 ${mn[1]} 件。<span class="hint">建议：把${ST(mx[0]).name}的 ${nb} 个批量确认改派给${ST(mn[0]).name}。</span>`, 'rebal', `${mx[0]}>${mn[0]}`, '一键改派'));
+  if (mx[1] - mn[1] >= 5 && nb) st.push(it(`${ST(mx[0]).name} 手上 ${mx[1]} 件待处理，是团队里最多的；${ST(mn[0]).name} 只有 ${mn[1]} 件。<span class="hint">建议：把${ST(mx[0]).name}的 ${nb} 个批量确认改派给${ST(mn[0]).name}。</span>`, 'rebal', `${mx[0]}>${mn[0]}`, '批量改派'));
   if (st.length) secs.push({ t: `卡住的（${st.length} 处）`, items: st });
   const ah = [], w = TASKS[0].waves.find(x => x.st === 'wait' && x.roster);
   if (w) { const c = capacity(w); ah.push(it(c.ok ? `第 ${w.n} 波计划 ${w.pub} 发布，产能检查通过，可以按计划发布。` : `<b>第 ${w.n} 波普测</b>计划 ${w.pub} 发布，名单 ${w.roster} 人。按第 1 波 4 级及以上 ${(c.p4 * 100).toFixed(1)}% 估算，需要约 ${c.est} 个预咨询，初级池本周只开放了 ${c.free} 个。<span class="hint">最晚本周四要定：推迟发布，还是请大家增开时段。</span>`, 'mo', `wave:${w.n}`, '看产能检查')); }
@@ -40,8 +40,8 @@ function briefL3() {
   const mine = [...STU.filter(s => fdueNow(s) && s.owner === u).map(s => it(`你负责的 ${nm(s)} 随访到期了。`, 'open', s.id, '打开')), ...BOOK.filter(b => b.cid === u && b.day === todayIdx() && ['ok', 'confirm'].includes(b.st)).map(b => it(`今天 ${TIMES[b.t]} 你有一个${b.kind}：${nm(SU(b.sid))}。`, 'open', b.sid, '打开'))];
   if (mine.length) secs.push({ t: '你自己的', items: mine });
   if (!kn.length) secs.push({ t: '危机', items: [it(`没有未接收的危机。`), ...crisisItems] });
-  const lead = dec.length + kn.length ? `今天有 ${dec.length + kn.length} 件事要你亲自处理${st.length ? `，${st.length} 处卡住了需要你推一下` : ''}，其余在正常推进。` : '今天没有必须你拍板的事，团队都在正常推进。';
-  return { lead, secs, foot: `过去 24 小时：确认等级或审批 ${within(24, ['conf', 'downok', 'downno', 'assign'])} 人次，L1 核验 ${within(24, ['l1keep', 'l1up'])} 人，结案 ${CRISES.filter(k => k.closed && hrs(k.closed.at) <= 24).length} 件。第 1 波完成率 ${Math.round(SURV().length / ROSTER * 100)}%（${SURV().length}/${ROSTER}）。新危机我会即时提醒你，不等明天早报。` };
+  const lead = dec.length + kn.length ? `今天有 ${dec.length + kn.length} 件事要你亲自处理${st.length ? `，另有 ${st.length} 项需要协调或跟进` : ''}。` : '今天没有需要你直接处理的审批或危机事项。';
+  return { lead, secs, foot: `过去 24 小时：确认等级或审批 ${within(24, ['conf', 'downok', 'downno', 'assign'])} 人次，L1 核验 ${within(24, ['l1keep', 'l1up'])} 人，结案 ${CRISES.filter(k => k.closed && hrs(k.closed.at) <= 24).length} 件。第 1 波完成率 ${Math.round(SURV().length / ROSTER * 100)}%（${SURV().length}/${ROSTER}）。新危机会即时通知，不受每日简报时间限制。` };
 }
 function briefL2() {
   const u = me(), secs = [], myQ = STU.filter(s => s.stage === 'L2' && s.assignee === u);
@@ -59,7 +59,7 @@ function briefL2() {
   if (UNPUB().some(x => x.cid === u)) ot.push(it(`你 ${UNPUB().filter(x => x.cid === u).map(x => x.day).join('、')} 还没有开放任何时段，学生约不到你。`, 'bsched', '', '去排班'));
   CRISES.filter(k => k.assist === u && k.st === 'handling').forEach(k => ot.push(it(`负责人指派你协助一条危机：${nm(SU(k.sid))}。`, 'crisisOpen', k.id, '查看')));
   if (ot.length) secs.push({ t: '其他要处理的', items: ot });
-  return { lead: `今天你有 ${tb.length} 次咨询，队列里 ${myQ.length} 位学生${hot.length ? `，其中 ${hot.length} 位 24 小时内到时限` : ''}。`, secs, foot: '复核时拿不准，可以上推 L3；把 4 级及以上往下调需要 L3 审批。' };
+  return { lead: `今天你有 ${tb.length} 次咨询，队列里 ${myQ.length} 位学生${hot.length ? `，其中 ${hot.length} 位 24 小时内到时限` : ''}。`, secs, foot: '复核存在疑问时，可提交 L3 处理；降低 4 级及以上学生的关注等级需要 L3 审批。' };
 }
 /* 辅导员：该做的全部列出，按紧急度分三档；最紧急的一档全部展开，其余默认只露前两条。用时只做参考，不限制展示 */
 const EST = { asks: 6, pending: 4, verify: 5, fdue: 8 };
@@ -82,8 +82,8 @@ function briefL1() {
   if (T(3).length) secs.push({ t: `其他待办，按剩余时限（${T(3).length}）`, items: T(3).map(row) });
   secs.push({ t: '按类别看', items: [it(`待核实 ${v.length} · 待补充 ${pd.length} · 随访到期 ${fd.length} · 中心请协助 ${as.length}`, 'qtabGo', 'verify', '打开名单')] });
   if (pd.filter(s => s.next > NOW).length) secs.push({ t: `待补充信息 ${pd.filter(s => s.next > NOW).length} 位还没到约定时间`, items: [it('到时间会提醒你。延期 2 次或超过最晚期限的，请交回中心。', 'qtabGo', 'pending', '查看')] });
-  if (cand.length) secs.push({ t: '做不完？', items: [it(`全部 ${cand.length} 件预计约 ${mins} 分钟（仅供参考）。时间确实不够，可以请中心改派或调整期限，先保住「必须今天处理」的那几件。`, 'mo', 'capReq:', '请中心协调')] });
-  return { lead: cand.length ? `今天一共 ${cand.length} 件：必须今天处理 ${T(1).length} 件，24 小时内到期 ${T(2).length} 件，其余 ${T(3).length} 件按剩余时限往后排。听到学生的安全表达，随时用「报告紧急情况」。` : '今天没有待办。听到学生的安全表达，随时用「报告紧急情况」。', secs, foot: S.role === 'L1s' ? '你看到的是编号，这是为了保护同学。拿不准就交给咨询师。' : '你能看到学生姓名、电话和关注等级，但看不到分数、报告和对话。你的工作是补充事实、联系学生、及时上报，风险判断交给咨询师。' };
+  if (cand.length) secs.push({ t: '需要协调工作量？', items: [it(`全部 ${cand.length} 件预计约 ${mins} 分钟（仅供参考）。请优先处理今天到期的事项。如无法按时完成，可请中心改派或调整期限。`, 'mo', 'capReq:', '请中心协调')] });
+  return { lead: cand.length ? `今天一共 ${cand.length} 件：必须今天处理 ${T(1).length} 件，24 小时内到期 ${T(2).length} 件，其余 ${T(3).length} 件按剩余时限往后排。学生表达自伤、自杀想法或可能处于紧急危险时，请使用「报告紧急情况」。` : '今天没有待办。学生表达自伤、自杀想法或可能处于紧急危险时，请使用「报告紧急情况」。', secs, foot: S.role === 'L1s' ? '此账号只显示学生编号。遇到无法判断的情况，请交给咨询师处理。' : '你能看到学生姓名、电话和关注等级，但看不到分数、报告和对话。请记录观察到的事实、联系学生，并在需要时报告；专业风险判断由咨询师完成。' };
 }
 function briefADM() {
   const secs = [], ap = APPROVALS.filter(a => a.st === '待批');
@@ -122,22 +122,22 @@ const CHIPS = {
 function answer(q) {
   const r = S.role, has = (...k) => k.some(x => q.includes(x));
   if (has('先做', '今天', '重要')) { const b = briefData(); return { html: `${b.lead}<ol>${b.secs.slice(0, 3).map(s => `<li><b>${s.t}</b>：${s.items[0].html.replace(/<span class="hint">.*?<\/span>/g, '')}</li>`).join('')}</ol>完整内容在工作台顶部的今日简报里。` }; }
-  if (has('几级', '等级', '分数') && isL1()) return { html: '学生的关注等级在名单和档案里能看到；分数和报告你的权限看不到，这是知情同意书里写明的保护措施，我也不能告诉你。如果你觉得某位学生状态不对，在任务卡里选「有新的情况，交给咨询师」就好，不需要理由充分。' };
+  if (has('几级', '等级', '分数') && isL1()) return { html: `${S.role === 'L1s' ? '学生心理委员账号仅显示学生编号，不显示关注等级、分数或报告。' : '学生的关注等级可在名单和档案中查看，当前账号无权查看分数和报告。'}发现学生近况变化时，可在任务卡选择「有新的情况，交给咨询师」，记录已了解到的事实，交由咨询师复核。` };
   if (has('完成率', '学院') && !isL1() && r !== 'ADM') { const rows = COLLEGES.map(c => { const d = SURV().filter(s => s.college === c).length, p = PENDING.filter(x => x.college === c).length; return [c, d, d + p, Math.round(d / (d + p) * 100)]; }).sort((a, b) => a[3] - b[3]);
-    return { html: `完成率最低的是<b>${rows[0][0]}</b>：${rows[0][1]}/${rows[0][2]}（${rows[0][3]}%）。<br>${rows.map(x => `${x[0]} ${x[3]}%`).join(' · ')}<br>需要的话，我可以帮你起草一条发给该学院辅导员的提醒。`, chips: ['起草催办消息'] }; }
+    return { html: `完成率最低的是<b>${rows[0][0]}</b>：${rows[0][1]}/${rows[0][2]}（${rows[0][3]}%）。<br>${rows.map(x => `${x[0]} ${x[3]}%`).join(' · ')}<br>可选择「起草催办消息」生成提醒草稿，确认内容后再发送。`, chips: ['起草催办消息'] }; }
   if (has('王磊', '手上', '负荷') && r === 'L3') { const c = 'c4'; return { html: `王磊现在负责 ${own(c)} 位学生${STU.filter(s => s.owner === c && curLv(s) >= 4).length ? `，其中 4 级及以上 ${STU.filter(s => s.owner === c && curLv(s) >= 4).length} 位` : ''}；本周还有 ${openSlots(c).length} 个空档；正在处置的危机 ${CRISES.filter(k => k.st === 'handling' && k.recv.by === c).length} 条。` }; }
   if (has('超时') && r === 'L3') { const od = STU.filter(s => ['L1', 'L2'].includes(s.stage) && overdue(s)); return od.length ? { html: `现在有 ${od.length} 位超时：<ul>${od.map(s => `<li>${nm(s)} · ${layerTxt(s)} · 在${ST(holder(s)).name}手上 · 超时 ${dur(-leftOf(s))}</li>`).join('')}</ul>`, chips: ['起草催办消息'] } : { html: '现在没有超时的。' }; }
   if (has('第 2 波', '按时发', '产能') && r === 'L3') { const w = TASKS[0].waves[1], c = capacity(w); return { html: c.ok ? `可以。产能检查三项都通过。` : `不建议按时发。需要约 ${c.est} 个预咨询，初级池本周只开放 ${c.free} 个${c.l2 > RULES.cap ? `，L2 待复核也超过阈值` : ''}${crisisNew().length ? '，还有未接收的危机' : ''}。<br>两个办法：推迟 1 周，或者请初级咨询师每人增开约 ${Math.ceil((c.est - c.free) / 3)} 个时段。` }; }
   if (has('快到时限') && r === 'L2') { const a = byDue(STU.filter(s => s.stage === 'L2' && s.assignee === me())).filter(s => leftOf(s) < 24); return { html: a.length ? `<ul>${a.map(s => `<li>${nm(s)} · ${layerTxt(s)} · ${dueTag(leftOf(s))}</li>`).join('')}</ul>` : '24 小时内没有到时限的。' }; }
   if (has('随访到期')) { const a = STU.filter(s => fdueNow(s) && (isL1() ? !s.owner && s.follower === me() : s.owner === me())); return { html: a.length ? `<ul>${a.map(s => `<li>${nm(s)} · ${fdueTag(s)}${s.miss ? ` · 上次没接通` : ''}</li>`).join('')}</ul>` : '没有到期的随访。' }; }
-  if (has('配置') && r === 'ADM') { const cf = AUDIT.filter(a => a.cat === '配置'); return { html: cf.length ? `<ul>${cf.slice(0, 8).map(a => `<li>${fmt(a.at)} ${ST(a.uid).name}：${esc(a.t)}</li>`).join('')}</ul>` : '这次演示里还没有配置变更。可以去「设置」改一条再来问我。', chips: ['起草配置变更通知'] }; }
+  if (has('配置') && r === 'ADM') { const cf = AUDIT.filter(a => a.cat === '配置'); return { html: cf.length ? `<ul>${cf.slice(0, 8).map(a => `<li>${fmt(a.at)} ${ST(a.uid).name}：${esc(a.t)}</li>`).join('')}</ul>` : '当前没有配置变更记录。', chips: ['起草配置变更通知'] }; }
   if (has('值班')) return { html: `本周 ${ST(DUTY[0].who).name}，下周（${DUTY[1].wk}）${ST(DUTY[1].who).name}，再下周 ${ST(DUTY[2].who).name}。` };
   if (has('起草')) return draft(q);
-  return { html: '演示版里我能回答这些问题，也可以帮你起草：', chips: CHIPS[S.role] };
+  return { html: '可查询以下内容，或生成消息草稿：', chips: CHIPS[S.role] };
 }
 function draft(q) {
   const r = S.role;
-  if (q.includes('周报') && r === 'L3') { const rr = recvRate(); return { draft: { kind: 'report', title: `第 ${weekNo(NOW)} 周心理普测工作周报（脱敏）`, text: `各位领导：\n\n本周秋季普测第 1 波（试点 4 个学院）完成 ${SURV().length}/${ROSTER} 人，完成率 ${Math.round(SURV().length / ROSTER * 100)}%。\n\n关注分布：${[5, 4, 3, 2, 1].map(l => `${l} 级 ${SURV().filter(s => curLv(s) === l).length} 人`).join('，')}。\n\n危机处置：共触发 ${CRISES.length} 条，12 小时内接收 ${rr.txt}，已结案 ${CRISES.filter(k => k.st === 'closed').length} 条，处置中 ${CRISES.filter(k => k.st === 'handling').length} 条。\n\n下周计划：第 2 波（大二、大三，${TASKS[0].waves[1].roster} 人）原定 ${TASKS[0].waves[1].pub} 发布，${capacity(TASKS[0].waves[1]).ok ? '产能检查通过，按计划进行' : '目前咨询时段不足，建议推迟 1 周或增开时段，待中心确认'}。\n\n大学心理咨询中心\n朱静` } }; }
+  if (q.includes('周报') && r === 'L3') { const rr = recvRate(); return { draft: { kind: 'report', title: `第 ${weekNo(NOW)} 周心理普测工作周报（脱敏）`, text: `各位领导：\n\n本周秋季普测第 1 波（试点 4 个学院）完成 ${SURV().length}/${ROSTER} 人，完成率 ${Math.round(SURV().length / ROSTER * 100)}%。\n\n关注分布：${[5, 4, 3, 2, 1].map(l => `${l} 级 ${SURV().filter(s => curLv(s) === l).length} 人`).join('，')}。\n\n危机处置：共触发 ${CRISES.length} 条，按规定时限接收 ${rr.txt}，已结案 ${CRISES.filter(k => k.st === 'closed').length} 条，处置中 ${CRISES.filter(k => k.st === 'handling').length} 条。\n\n下周计划：第 2 波（大二、大三，${TASKS[0].waves[1].roster} 人）原定 ${TASKS[0].waves[1].pub} 发布，${capacity(TASKS[0].waves[1]).ok ? '产能检查通过，按计划进行' : '目前咨询时段不足，建议推迟 1 周或增开时段，待中心确认'}。\n\n大学心理咨询中心\n朱静` } }; }
   if (q.includes('催办') && r === 'L3') { const od = STU.filter(s => ['L1', 'L2'].includes(s.stage) && overdue(s)), by = {}; od.forEach(s => { const h = holder(s); by[h] = (by[h] || 0) + 1; });
     const to = Object.keys(by); if (!to.length) return { html: '现在没有超时的，不需要催办。' };
     return { draft: { kind: 'nudge', to, title: `催办消息（发给 ${to.map(h => ST(h).name).join('、')}）`, text: to.map(h => `${HON[h] || ST(h).name}好，你的队列里有 ${by[h]} 位学生已超过处理时限，麻烦今天抽空处理。如果忙不过来请告诉我，我来协调改派。——朱静`).join('\n\n') } }; }

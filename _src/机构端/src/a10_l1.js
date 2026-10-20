@@ -102,7 +102,7 @@ modal = function () {
 function l1Extras() {
   if (!isL1()) return '';
   const mine = CRISES.filter(k => k.by === me() && k.st !== 'closed');
-  return `<div class="urgbar"><span>${I('alert', 's')}听到学生的安全表达、或学生失联？</span><button class="btn red xs" data-act="mo" data-arg="report:urgent">报告紧急情况</button></div>
+  return `<div class="urgbar"><span>${I('alert', 's')}学生可能有自伤、自杀风险或失联？</span><button class="btn red xs" data-act="mo" data-arg="report:urgent">报告紧急情况</button></div>
     ${mine.map(k => { const y = SU(k.sid), n = NOTI.find(x => x.ref === k.id && x.to === DUTY[0].who), lim = kLim(k);
       const step = k.st !== 'new' ? `${ST(k.recv.by).name} 已确认接收（${fmt(k.recv.at)}），正在处理` : k.esc ? `值班 ${ST(DUTY[0].who).name} ${escTxt(k)}内未确认，已${k.urgent ? '再次呼叫并' : ''}通知中心负责人朱静${k.esc >= 2 ? '、分管领导' : ''}` : `已电话和短信通知值班 ${ST(DUTY[0].who).name}，等待确认（${cLeft(k) < 0 ? '已超时' : '剩 ' + dur(cLeft(k))}）`;
       return `<div class="head ${k.st === 'new' ? '' : 'n'}" style="padding:10px 16px">${I('alert')}<div class="grow"><b style="font-size:13.5px">你报告的${k.urgent ? '紧急' : '风险'}情况 · ${nm(y)}</b><small>${fmt(kClock(k))} 报告 · ${step}</small></div></div>`; }).join('')}`;

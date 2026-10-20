@@ -50,13 +50,13 @@ const _sh18 = shell; shell = function (b) { let h = _sh18(b); const act = CRISES
   if (S.prev === 'home' && S.page !== 'home' && S.page !== 'noti') h = h.replace('<div class="page" id="pg">', '<div class="page" id="pg"><p class="nback"><button class="lnk" data-act="go" data-arg="home">← 返回工作台</button></p>');
   return h; };
 
-/* ---------- 今日简报：做成卡片，一键展开 / 收起（表格 91） ---------- */
+/* ---------- 今日简报：做成卡片，展开全部 / 收起（表格 91） ---------- */
 briefPage = function () { const b = briefData(); S.bexp = S.bexp || {}; S.hx = S.hx || {}; const allX = !!S.bAll;
   const card = (s, i) => { const must = s.red, ex = must || allX || S.bexp[i], shown = ex ? s.items : s.items.slice(0, 2);
     return `<div class="bs bcard ${s.red ? 'red' : ''}"><h4>${s.t}<span class="note"> · ${s.items.length} 条</span></h4>${shown.map((x, j) => { const k = i + '-' + j, m = x.html.match(/<span class="hint">(.*?)<\/span>/), main = x.html.replace(/<span class="hint">.*?<\/span>/, '');
       return `<div class="bi"><div>${main}${m ? (S.hx[k] ? `<span class="hint">${m[1]} <button class="lnk" data-act="hx" data-arg="${k}">收起</button></span>` : ` <button class="lnk" data-act="hx" data-arg="${k}">小屿的提醒</button>`) : ''}</div>${x.act ? `<button class="btn ${s.red ? 'red' : 'sec'} xs" data-act="${x.act}" data-arg="${esc(x.arg)}">${x.btn}</button>` : x.tag ? `<span class="pill g">${x.tag}</span>` : ''}</div>`; }).join('')}
       ${!must && !allX && s.items.length > 2 ? `<button class="lnk more" data-act="bexp" data-arg="${i}">${S.bexp[i] ? '收起' : `展开其余 ${s.items.length - 2} 条`}</button>` : ''}</div>`; };
-  return `<div class="bpage"><div class="brief"><div class="bh"><img src="${MASCOT}" alt=""><div class="grow"><b>小屿 · 今日简报</b><small>按 ${fmt(NOW)} 的数据 · 每天 8:30 推送 · 危机即时提醒</small></div><button class="btn sec xs" data-act="bAllT">${allX ? '全部收起' : '一键展开'}</button><button class="btn sec xs" data-act="shareBrief">${I('share', 's')}分享</button></div>
+  return `<div class="bpage"><div class="brief"><div class="bh"><img src="${MASCOT}" alt=""><div class="grow"><b>小屿 · 今日简报</b><small>按 ${fmt(NOW)} 的数据 · 每天 8:30 推送 · 危机即时提醒</small></div><button class="btn sec xs" data-act="bAllT">${allX ? '全部收起' : '展开全部'}</button><button class="btn sec xs" data-act="shareBrief">${I('share', 's')}分享</button></div>
     <p class="greet">${greet()}。${b.lead}</p><div class="bgrid">${b.secs.map(card).join('')}</div><p class="bfoot">${b.foot}</p>
     <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn pri" data-act="hview" data-arg="work">开始工作 ${I('right', 's')}</button></div></div>
     <div class="aside">${assistBody(true)}</div></div>`; };
@@ -68,7 +68,7 @@ const lvWhyAdd = t => { t = (t || '').trim(); if (!t) return; const L = [t].conc
 const _md18b = modal; modal = function () { let h = _md18b.apply(this, arguments); const [k] = (S.mo || '').split(':');
   if (k === 'conf' && h) { const R = lvWhyGet();
     h = h.replace('等级与初判不同必须写原因；', '原因选填；').replace(/原因（必填）|原因（与初判一致可不填）/, '原因（选填）');
-    if (R.length) h = h.replace('<textarea data-bind="form.note"', `<div class="opts rwhy">${R.map(x => `<button data-act="fset" data-arg="note|${esc(x)}" title="用这条">${esc(x.length > 24 ? x.slice(0, 24) + '…' : x)}</button>`).join('')}<small class="note">最近用过的原因，点一下填入</small></div><textarea data-bind="form.note"`); }
+    if (R.length) h = h.replace('<textarea data-bind="form.note"', `<div class="opts rwhy">${R.map(x => `<button data-act="fset" data-arg="note|${esc(x)}" title="用这条">${esc(x.length > 24 ? x.slice(0, 24) + '…' : x)}</button>`).join('')}<small class="note">最近使用的原因，可点击填入</small></div><textarea data-bind="form.note"`); }
   return h; };
 const _confOk18 = ACT.confOk; ACT.confOk = function (id) { const F = S.form, had = (F.note || '').trim(); if (!had) F.note = '未写原因'; const r = _confOk18.apply(this, arguments); if (had) lvWhyAdd(had); else if (S.mo) F.note = ''; return r; };
 
@@ -361,7 +361,7 @@ const _md18j = modal; modal = function () { const [k, id] = (S.mo || '').split('
     const n = STU.filter(s => s.college === c && s.follower === FOLLOWER_OF[c] && s.stage !== 'crisis').length;
     return mbox(`调整 · ${c}`, '改动立即生效，并记入操作记录。', `${fld('1–3 级 · 学院跟进人（L1）', `<div class="opts">${L1s.map(u => `<button class="${F.cf === u ? 'on' : ''}" data-act="fset" data-arg="cf|${u}">${fullOf(u)}</button>`).join('')}</div>`)}
       ${F.cf && F.cf !== FOLLOWER_OF[c] ? fld(`已经在跟进的 ${n} 位学生`, `<div class="opts">${[['1', '一起转给新跟进人'], ['0', '留给原来的人，只改之后的']].map(([v, t]) => `<button class="${F.cmove === v ? 'on' : ''}" data-act="fset" data-arg="cmove|${v}">${t}</button>`).join('')}</div>`) : ''}
-      ${fld('4 级 · 对口咨询师（L2）', `<div class="opts">${L2s.map(u => `<button class="${F.cl2 === u ? 'on' : ''}" data-act="fset" data-arg="cl2|${u}">${fullOf(u)}</button>`).join('')}</div>`)}<p class="note">5 级（危机）始终先通知当周值班，在「值班表」里排。</p>`, '保存', 'colGo', c); }
+      ${fld('4 级 · 对口咨询师（L2）', `<div class="opts">${L2s.map(u => `<button class="${F.cl2 === u ? 'on' : ''}" data-act="fset" data-arg="cl2|${u}">${fullOf(u)}</button>`).join('')}</div>`)}<p class="note">5 级危机首先通知当周值班咨询师；值班安排由心理中心负责人维护。</p>`, '保存', 'colGo', c); }
   return _md18j.apply(this, arguments); };
 ACT.colGo = c => { const F = S.form, of = FOLLOWER_OF[c], ol2 = (RULES.colL2 || {})[c] || l2For({ college: c }), ch = [];
   if (F.cf && F.cf !== of) { FOLLOWER_OF[c] = F.cf; ch.push(`跟进人 ${of ? ST(of).name : '—'} → ${ST(F.cf).name}`);
@@ -383,7 +383,7 @@ const cwPage2 = () => { const ed = S.role === 'L3', F = S.form, grp = l => CRISI
     ${ed ? `<div class="card"><h3>添加<span class="sp"></span>${miss ? `<button class="btn sec xs" data-act="cwDef">补齐临床常用词库（还差 ${miss} 个）</button>` : '<small>临床常用词库已全部包含</small>'}</h3>
       <div class="g2 grid"><div>${fld('加一个词', `<div class="filters" style="margin:0"><input class="in" style="width:200px" data-bind="form.cw" placeholder="例如：撑不下去" value="${esc(F.cw || '')}"><div class="opts">${['高', '中'].map(l => `<button class="${(F.cwl || '高') === l ? 'on' : ''}" data-act="fset" data-arg="cwl|${l}">${l === '高' ? '高危' : '需关注'}</button>`).join('')}</div><button class="btn sec xs" data-act="cwAdd">添加</button></div>`)}</div>
       <div>${fld('批量导入（一行一个词，后面可以写「，高」或「，中」，不写按高危）', `<textarea data-bind="form.cwb" rows="4" placeholder="不想活，高&#10;撑不下去，中">${esc(F.cwb || '')}</textarea><div style="margin-top:6px"><button class="btn sec xs" data-act="cwImp">导入</button></div>`)}</div></div></div>` : '<p class="note">只有心理中心负责人、高级咨询师可以修改。</p>'}
-    <div class="card"><h3>危机期间的谈心</h3><div class="prow"><span>恢复冻结的谈心要上级批准<small>学生进危机通道后，谈心事项和邀约自动冻结。老师申请恢复时，开着就要中心负责人或高级咨询师批准；关掉就直接恢复。</small></span><span class="sw ${RULES.unfzAppr ? 'on' : ''} ${ed ? '' : 'lk'}" ${ed ? 'data-act="unfzT"' : ''}></span></div></div>`; };
+    <div class="card"><h3>危机期间的谈心</h3><div class="prow"><span>恢复冻结的谈心要上级批准<small>学生进危机通道后，谈心事项和邀约自动冻结。启用后，恢复申请须由中心负责人或高级咨询师批准；关闭后，提交申请即恢复。</small></span><span class="sw ${RULES.unfzAppr ? 'on' : ''} ${ed ? '' : 'lk'}" ${ed ? 'data-act="unfzT"' : ''}></span></div></div>`; };
 const cwSet = (w, l) => { RULES.cwLv = RULES.cwLv || {}; RULES.cwLv[w] = l; };
 const _cwAdd18 = ACT.cwAdd; ACT.cwAdd = function () { const w = (S.form.cw || '').trim(), l = S.form.cwl || '高', n = CRISIS_WORDS.length; _cwAdd18.apply(this, arguments); if (CRISIS_WORDS.length > n) { cwSet(w, l); AUDIT[0] && AUDIT[0].t.includes(w) && (AUDIT[0].t += `（${l === '高' ? '高危' : '需关注'}）`); } };
 Object.assign(ACT, {
@@ -471,7 +471,7 @@ ACT.tHomeGo = t => { go('talk'); S.rec = null; S.rv = null; S.tabs.talk = t; };
 /* 核实工作左列表、右操作区（表格 97）：L1 在工作台点学生，档案在右边打开，不遮住列表，可以一个个往下点 */
 const _rSp18 = render; render = function () { const r = _rSp18.apply(this, arguments); try { const wk = !!(S.uid && S.page === 'home' && isL1() && homeView() === 'work'), on = wk && !!S.dw, vs = wk && /^(verify|quality):/.test(S.mo || '');
     document.body.classList.toggle('lsplit', on);
-    if (S.page === 'home') document.querySelectorAll('#pg .t td').forEach(td => { if (td.querySelector('button,select,input,.clamp') || td.textContent.trim().length <= 60) return; td.innerHTML = `<div class="clamp" title="点一下展开">${td.innerHTML}</div>`; });   // 表格 60：超长文字折叠，点一下展开
+    if (S.page === 'home') document.querySelectorAll('#pg .t td').forEach(td => { if (td.querySelector('button,select,input,.clamp') || td.textContent.trim().length <= 60) return; td.innerHTML = `<div class="clamp" title="点击展开">${td.innerHTML}</div>`; });   // 表格 60：超长文字折叠，点击展开
     document.body.classList.toggle('vsplit', vs);
     document.querySelectorAll('#pg tr').forEach(tr => { const b = tr.querySelector('[data-act="mo"]'), a = tr.dataset.act === 'open' ? tr.dataset.arg : b && (b.dataset.arg || '').split(':')[1]; tr.classList.toggle('cur', !!a && ((on && a === S.dw.sid) || (vs && a === S.mo.split(':')[1]))); }); } catch (e) {} return r; };
 
