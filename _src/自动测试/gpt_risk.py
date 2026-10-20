@@ -97,7 +97,28 @@ def r18(page):
     assert page.evaluate("activeRisk().length === 0 && !TALKS[TALKS.length - 1].auxSignals && S.toast.includes('草稿不会自动报告')"), 'draft is reminder-only for all tiers'
 
 
-CASES = {'R10': r10, 'R11': r11, 'R18': r18}
+def q04(page):
+    assert page.evaluate("CRISIS_WORDS.length === 604 && [1,2,3].map(l => CRISIS_WORDS.filter(w => cwL(w) === l).length).join() === '99,195,310'"), 'default risk-word counts must not change'
+    assert page.evaluate("['不想死','没想死','没有想死','不会想死','并非想死','否认想死'].every(t => !TALK_RE.test(t)) && TALK_RE.test('不愿提起。我想死')"), 'negation within four characters must stop at punctuation'
+    page.evaluate("makeRiskRec('学生说：我感到绝望'); recSave(false); window.generalRiskId = activeRisk()[0].id; render()")
+    assert page.evaluate("!activeRisk()[0].urgent && kLim(activeRisk()[0]) === RULES.esc && cLeft(activeRisk()[0]) > RULES.esc - 0.1"), 'level-2 countdown must use the general four-hour limit'
+    text = page.inner_text('#modal')
+    assert '已报告风险情况' in text and '4 小时' in text and '30 分钟' not in text, 'level-2 confirmation modal must say four hours'
+    assert page.evaluate("NOTI.some(n => n.ref === generalRiskId && n.t.includes('4 小时内确认接收'))"), 'level-2 duty notification must say four hours'
+    page.evaluate("S.mo = 'tkDuty:' + generalRiskId; render()")
+    assert '4 小时' in page.inner_text('#modal') and '【灵屿】紧急' not in page.inner_text('#modal'), 'duty phone preview must use the same level-2 policy'
+    page.evaluate("S.mo = null; ACT.crisisOpen(generalRiskId); render()")
+    assert '12小时' not in page.inner_text('#pg') and '12 小时' not in page.inner_text('#pg'), 'disposal page must not show a twelve-hour confirmation countdown'
+    page.evaluate("NOW.setTime(+activeRisk()[0].at + 3.5 * H); tick()")
+    assert page.evaluate("activeRisk()[0].esc === 0"), 'level-2 report must not escalate early'
+    page.evaluate("NOW.setTime(+activeRisk()[0].at + 4.01 * H); tick()")
+    assert page.evaluate("activeRisk()[0].esc === 1 && NOTI.some(n => n.ref === generalRiskId && n.to === 'c5' && n.t.includes('4 小时'))"), 'unconfirmed level-2 report must escalate at four hours'
+    page.evaluate("closeRisk(); makeRiskRec('现在想死'); recSave(false); render()")
+    assert page.evaluate("activeRisk()[0].urgent && kLim(activeRisk()[0]) === RULES.urgentMin / 60"), 'level-1 limit remains thirty minutes'
+    assert '已报告紧急情况' in page.inner_text('#modal') and '30 分钟' in page.inner_text('#modal'), 'level-1 confirmation modal remains urgent'
+
+
+CASES = {'R10': r10, 'R11': r11, 'R18': r18, 'Q04': q04}
 
 
 def main():

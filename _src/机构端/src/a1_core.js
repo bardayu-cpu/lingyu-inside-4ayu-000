@@ -79,12 +79,12 @@ const bLimit = b => SU(b.sid) && curLv(SU(b.sid)) >= 5 ? RULES.lim.book5 : RULES
 const bLeft = b => ['audit', 'confirm'].includes(b.st) ? bLimit(b) - hrs(b.at) : null;
 const auditor = b => b.auditor || SU(b.sid).follower;
 const crisisNew = () => CRISES.filter(k => k.st === 'new').sort((a, b) => a.at - b.at);
-/* 紧急报告（学院 / 他人报告、学生主动求助）按分钟确认；普通危机 12 小时 */
-const kLim = k => k.urgent ? RULES.urgentMin / 60 : 12;
+/* 一级紧急报告按分钟确认；二级报告与通知、一级升级共用一般时限。 */
+const kLim = k => k.urgent ? RULES.urgentMin / 60 : RULES.esc;
 const kEsc = k => k.urgent ? [RULES.urgentMin / 60, 2] : [RULES.esc, RULES.esc2];
 const kClock = k => k.urgentAt || k.at;
 const cLeft = k => kLim(k) - hrs(kClock(k));
-/* 12 小时内接收率：分母含已超过 12 小时仍未接收的 */
+/* 按各报告规定时限统计接收率，含超时仍未接收的报告。 */
 const recvRate = () => { const rec = CRISES.filter(k => k.recv), late = CRISES.filter(k => k.st === 'new' && cLeft(k) < 0), n = rec.length + late.length; const ok = rec.filter(k => (k.recv.at - kClock(k)) / H <= kLim(k)).length; return { ok, n, txt: n ? `${ok}/${n}` : '—' }; };
 const slotDate = (day, t) => { const d = day < 0 ? new Date(2026, 9, 9) : new Date(DD(day)); const [h, m] = TIMES[t].split(':'); d.setHours(+h, +m, 0, 0); return d; };
 const todayIdx = () => DAYS.findIndex(d => sameDay(d, NOW));

@@ -83,7 +83,7 @@ function quality() {
   const rr = recvRate();
   const tot = Object.values(SCHED).flat(2).length, bkd = Object.values(SCHED).flat(2).filter(v => v === 'bk').length, op = Object.values(SCHED).flat(2).filter(v => v === 'open').length;
   return {
-    crisis: rr.n ? `12 小时内接收 ${rr.txt}` : '—',
+    crisis: rr.n ? `按规定时限接收 ${rr.txt}` : '—',
     l1: keep + up ? `上推率 ${Math.round(up / (keep + up) * 100)}%（${up}/${keep + up}）` : '—',
     fb: fb.length ? `「加重」${fb.filter(e => e.t.includes('加重')).length}/${fb.length}` : '—',
     l2: confd.length ? `与 AI 初判一致 ${agree}/${confd.length}` : '本期还没有人工确认',
