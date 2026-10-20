@@ -65,8 +65,9 @@ function intakeSettings() {
   <div class="card"><h3>版本记录<span class="sp"></span><small>每次保存和恢复都记入操作记录</small></h3>
     <table class="t"><tr><th>版本</th><th>时间</th><th>修改人</th><th>说明</th><th></th></tr>${r.hist.slice().reverse().map(h => `<tr><td>第 ${h.ver} 版${h.ver === r.ver ? ' <span class="pill g">当前</span>' : ''}</td><td>${fmt(h.at)}</td><td>${ST(h.by).name}</td><td>${esc(h.note)}</td><td>${h.ver !== r.ver && edC ? `<button class="btn ghost xs" data-act="iktRestore" data-arg="${h.ver}">恢复这一版</button>` : ''}</td></tr>`).join('')}</table></div>`;
 }
-function iktPreview(tk) { const d = iktD(), qs = d[tk], fill = t => esc(t).replace('{接待老师}', '<b>李文老师</b>').replace(/[^。]*\{上次聊到的话题\}[^。]*。/, m => m.replace('{上次聊到的话题}', '<b>睡眠、学业压力</b>'));
-  return `<div class="ikpv"><div class="ikpv-w"><img src="${MASCOT_IK}" alt=""><div><small>提交预约后学生看到的大窗口</small><p>${fill(d.open)}</p><div class="ikpv-b"><span>这次先不用</span><span class="on">好的，开始（约 ${iktMin(qs)} 分钟）</span></div></div></div>
+function iktPreview(tk) { const high = typeof ikBankCur !== 'undefined' && ikBankCur === 'h', d = iktD(), qs = d[tk], fill = t => esc(t).replace('{接待老师}', '<b>李文老师</b>').replace(/[^。]*\{上次聊到的话题\}[^。]*。/, m => m.replace('{上次聊到的话题}', '<b>睡眠、学业压力</b>'));
+  const opening = high ? `<div class="ikpv-w"><img src="${MASCOT_IK}" alt=""><div><small>接受心理中心邀约后，直接进入预咨询；开场白显示在第一题上面</small><p>${fill(d.open)}</p></div></div>` : `<div class="ikpv-w"><img src="${MASCOT_IK}" alt=""><div><small>提交预约后学生看到的大窗口</small><p>${fill(d.open)}</p><div class="ikpv-b"><span>这次先不用</span><span class="on">好的，开始（约 ${iktMin(qs)} 分钟）</span></div></div></div>`;
+  return `<div class="ikpv">${opening}
     <div class="ikpv-q">${qs.map((q, i) => `<div><small>第 ${i + 1} / ${qs.length} 题 · ${IKT_TYPES[q.type]}${q.skip ? ' · 可跳过' : ''}</small><b>${esc(q.say)}</b>${q.type === 'text' ? '<span class="ikpv-t">学生自己写</span>' : `<span class="ikpv-o">${(q.useTopics ? ['学业压力', '情绪低落', '睡眠', '人际关系', '…'] : q.opts || []).map(o => `<i>${esc(o)}</i>`).join('')}</span>`}</div>`).join('')}</div>
     <p class="note">最后一步：${fill(d.close)}<br>学生可以修改表里每一项，勾选「同意把这份摘要发给接待我的老师」后才会发送。</p></div>`; }
 /* 输入：草稿先存在 S.iktD，点「保存为第 N 版」才生效 */
@@ -142,7 +143,7 @@ if (typeof LY_in === 'function') {
     o.__no = no; o.__cfg = { intakeMode: RULES.intakeMode, ikt: iktSnap() }; return o; };
 }
 const _md13 = modal; modal = function () { const [k, id] = (S.mo || '').split(':');
-  if (k === 'iktPrev') return `<div class="ov" data-act="ovClose"><div class="mo wide"><h3>学生视角预览 · ${id === 't2' ? '模板二' : '模板一'}</h3><p>${iktDirty() ? '预览的是还没保存的修改。' : '预览的是当前生效的版本。'}</p>${iktPreview(id)}<div class="acts"><button class="btn sec" data-act="moClose">关闭</button></div></div></div>`;
+  if (k === 'iktPrev') return `<div class="ov" data-act="ovClose"><div class="mo wide"><h3>学生视角预览 · ${typeof ikBankCur !== 'undefined' && ikBankCur === 'h' ? '高危咨询 · 接受邀约后' : id === 't2' ? '普通咨询 · 模板二' : '普通咨询 · 模板一'}</h3><p>${iktDirty() ? '预览的是还没保存的修改。' : '预览的是当前生效的版本。'}</p>${iktPreview(id)}<div class="acts"><button class="btn sec" data-act="moClose">关闭</button></div></div></div>`;
   return _md13(); };
 
 /* =====================================================================

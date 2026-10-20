@@ -76,6 +76,22 @@ with sync_playwright() as p:
         page.locator('[data-act=movedOk]').click()
         chk(E('S.bk.st') == '已确认' and '待接受新时间' not in page.locator('#app').inner_text(), 'Q08 acceptance changes status to confirmed')
 
+    if want('Q13'):
+        page.goto(Path(os.environ['ADM_HTML']).as_uri())
+        E("enter('c5','L3');go('booking');S.tabs.booking='ai';S.tabs.aisub='bank';render()")
+        page.locator('[data-act=ikBank][data-arg=h]').click()
+        page.locator('[data-ik=open]').fill('高危预览草稿开场白：接受邀请后我们先聊一聊。')
+        page.locator('[data-act=mo][data-arg="iktPrev:t1"]').click()
+        preview = page.locator('#modal').inner_text()
+        chk('高危咨询 · 接受邀约后' in preview and '第一题上面' in preview, 'Q13 high-risk preview is invitation first-question entry')
+        chk('高危预览草稿开场白' in preview and '还没保存' in preview, 'Q13 preview includes unsaved high-risk opening')
+        chk('提交预约后学生看到的大窗口' not in preview and '这次先不用' not in preview and '好的，开始' not in preview, 'Q13 ordinary welcome and buttons excluded from high-risk preview')
+        page.locator('[data-act=moClose]').click()
+        E('ACT.iktUndo();render()')
+        page.locator('[data-act=ikBank][data-arg=n]').click()
+        page.locator('[data-act=mo][data-arg="iktPrev:t1"]').click()
+        chk('普通咨询 · 模板一' in page.locator('#modal').inner_text() and '这次先不用' in page.locator('#modal').inner_text(), 'Q13 normal-bank welcome preview retained')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 
