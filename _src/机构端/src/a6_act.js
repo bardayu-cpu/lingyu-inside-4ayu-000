@@ -138,13 +138,13 @@ const ACT = {
   // 预约
   bAudit(id) { const b = BOOK.find(x => x.id === id); b.st = 'confirm'; b.at = new Date(NOW); log(`${S.role === 'L3' ? 'L3 代审核' : '审核'}预约并同步给${ST(b.cid).name}`, SU(b.sid), { cat: '预约', k: 'book' }); notify(b.cid, '站内', '有 1 个新预约待确认', b.id); toast(`已同步给${ST(b.cid).name}`); },
   auditorOk(id) { const b = BOOK.find(x => x.id === id), w = W[S.form.who]; if (!w) return toast('请选择'); const was = auditor(b); b.auditor = w; notify(w, '站内', '有 1 个预约改派给你审核', b.id); log(`改派预约审核人：${ST(was).name} → ${S.form.who}`, SU(b.sid), { cat: '预约', k: 'book' }); S.mo = null; toast(`已改派给${S.form.who}`); },
-  bOk(id) { const b = BOOK.find(x => x.id === id); b.st = 'ok'; const s = SU(b.sid); if (s.stage === 'invited') followUp(s, curLv(s), { owner: s.owner }); log('确认预约', s, { cat: '预约', k: 'book' }); notify('stu', '站内 + 短信', `预约已确认：${slotTxt(b)}`, b.id); toast('已确认；学生端收到时间和地点'); },
-  bMoveOk(id) { const b = BOOK.find(x => x.id === id); if (!S.form.slot) return toast('请选择新时段'); const [d, t] = S.form.slot.split('-').map(Number);
+  bOk(id) { const b = BOOK.find(x => x.id === id); if (!b || !mayBook(b) || b.st !== 'confirm') return toast('无权处理或申请状态已变化'); if (!canTakeSlot(b.cid, b.day, b.t, b.id, b.sid)) return toast('时段已被占用或关闭，请重新安排'); b.st = 'ok'; bookChanged(b, 'confirm'); const s = SU(b.sid); if (s.stage === 'invited') followUp(s, curLv(s), { owner: s.owner }); log('确认预约', s, { cat: '预约', k: 'book' }); notify('stu', '站内 + 短信', `预约已确认：${slotTxt(b)}`, b.id); toast('已确认；学生端收到时间和地点'); },
+  bMoveOk(id) { const b = BOOK.find(x => x.id === id); if (!S.form.slot) return toast('请选择新时段'); const [d, t] = S.form.slot.split('-').map(Number); if (!mayBook(b) || !canTakeSlot(b.cid, d, t, b.id, b.sid)) return toast('时段已被占用或关闭，请重新选择');
     setSlot(b.cid, b.day, b.t, 'open'); b.day = d; b.t = t; setSlot(b.cid, d, t, 'bk'); b.st = 'ok'; log(`老师改约到 ${slotTxt(b)}（不计学生次数）`, SU(b.sid), { cat: '预约', k: 'book' }); notify('stu', '站内 + 短信', `老师调整了你的预约时间：${slotTxt(b)}`, b.id); S.mo = null; toast('已改约；排班同步更新'); },
   bNoOk(id) { const b = BOOK.find(x => x.id === id); if (!S.form.why) return toast('请选原因'); b.st = 'no'; setSlot(b.cid, b.day, b.t, 'open'); log(`婉拒预约：${S.form.why}`, SU(b.sid), { cat: '预约', k: 'book' }); notify('stu', '站内', `老师婉拒了预约：${S.form.why}`, b.id); S.mo = null; toast('已婉拒；时段已释放，学生可重新预约，不计次数'); },
   bAgree(id) { const b = BOOK.find(x => x.id === id), s = SU(b.sid);
     if (b.req.type === '取消') { b.st = 'cancelled'; setSlot(b.cid, b.day, b.t, 'open'); s.q.cancel = Math.max(1, s.q.cancel); }
-    else { setSlot(b.cid, b.day, b.t, 'open'); b.day = b.req.day; b.t = b.req.t; setSlot(b.cid, b.day, b.t, 'bk'); b.st = 'ok'; }
+    else { const cid = b.req.cid || b.cid; if (!canTakeSlot(cid, b.req.day, b.req.t, b.id, b.sid)) return toast('新时段已被占用或关闭，原预约保持不变'); setSlot(b.cid, b.day, b.t, 'open'); b.cid = cid; b.day = b.req.day; b.t = b.req.t; setSlot(b.cid, b.day, b.t, 'bk'); b.st = 'ok'; }
     log(`同意学生${b.req.type}${b.req.type === '改期' ? '到 ' + slotTxt(b) : ''}`, s, { cat: '预约', k: 'book' }); notify('stu', '站内', `你的${b.req.type}申请已同意`, b.id); toast('已同意；排班同步更新，学生端弹窗告知'); },
   bDenyOk(id) { const b = BOOK.find(x => x.id === id); if (!S.form.note) return toast('请写原因'); b.st = 'ok'; log(`不同意学生${b.req.type}：${S.form.note}`, SU(b.sid), { cat: '预约', k: 'book' }); notify('stu', '站内', `你的${b.req.type}申请未通过：${S.form.note}`, b.id); S.mo = null; toast('已发送说明，原预约保持不变'); },
   bTalk(id) { const b = BOOK.find(x => x.id === id); log('回复学生：老师想先和你聊聊', SU(b.sid), { cat: '预约', k: 'book' }); notify('stu', '站内', '老师想先和你聊聊这次改期', b.id); toast('已通知学生，并记录'); },
@@ -157,7 +157,7 @@ const ACT = {
     else if (curLv(s) >= 4 && lv < curLv(s)) move(s, 'L3', 'down', { downTo: lv, downBy: me(), downWhy: `咨询后建议：${F.note}`, src: `${ST(me()).name} 咨询后建议降为 ${lv} 级`, owner: me() });
     else followUp(s, lv, { owner: me() });
     S.mo = null; toast(F.next === '结束并归档' ? '记录已保存，学生已归档' : '记录已保存'); },
-  assignBOk(id) { const b = BOOK.find(x => x.id === id), w = W[S.form.who]; if (!w) return toast('请选择咨询师'); if (!S.form.slot) return toast('请选择时段'); const [d, t] = S.form.slot.split('-').map(Number);
+  assignBOk(id) { const b = BOOK.find(x => x.id === id), w = W[S.form.who]; if (!w) return toast('请选择咨询师'); if (!S.form.slot) return toast('请选择时段'); const [d, t] = S.form.slot.split('-').map(Number); if (!canTakeSlot(w, d, t, b.id, b.sid)) return toast('时段已被占用或关闭，请重新选择');
     setSlot(b.cid, b.day, b.t, 'open'); b.cid = w; b.day = d; b.t = t; setSlot(w, d, t, 'bk'); b.st = 'confirm'; b.at = new Date(NOW); b.src = '待办池指派';
     log(`待办池指派给 ${S.form.who}，${slotTxt(b)}`, SU(b.sid), { cat: '预约', k: 'book' }); notify(w, '站内 + 短信', '待办池指派给你 1 个预约', b.id); S.mo = null; toast('已指派；排班同步更新'); },
   slot(a) { const [c, d, t] = a.split(':'); if (!S.draft[c]) S.draft[c] = SCHED[c].map(r => r.slice()); S.draft[c][d][t] = S.draft[c][d][t] === 'open' ? 'off' : 'open'; },

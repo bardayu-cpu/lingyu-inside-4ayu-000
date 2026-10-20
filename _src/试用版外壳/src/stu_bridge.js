@@ -15,6 +15,7 @@ function LY_in(ev) { const b = S.bk; let msg = '';
   else if (ev.t === 'move' && b) { const di = DAYS.findIndex(d => d.toDateString() === new Date(ev.date).toDateString());
     if (di >= 0) { const old = bkWhen(b); Object.assign(b, { di, ti: ev.ti, st: '已改约', moved: true, oldWhen: old });
       addMsg('edit', [`${whoZ(b.cid)}调整了你的预约时间`, 'Your counsellor moved your appointment'], [`由 ${old} 改为 ${bkWhen(b)}。`, `New time: ${bkWhen(b)}.`], 'mybook'); S.modal = 'moved'; msg = '学生端收到「老师调整了预约时间」'; } }
+  else if (ev.t === 'bookRejected' && b && b.cid === ev.cid && lyIso(b.di) === ev.date && b.ti === ev.ti && b.st === '待确认') { S.bk = null; S.page = 'book'; S.modal = null; toast(ev.reason); msg = '预约申请未提交，请重新选时间'; }
   else if (ev.t === 'intakeViewed' && b && b.intake) { b.intake.viewed = true; msg = '学生端：预咨询摘要显示「老师已查看」'; }
   else if (ev.t === 'invSync') { const keep = new Set((ev.invs || []).map(v => v.id)); if (S.invs) { const gone = S.invs.filter(o => !keep.has(o.id)).map(o => 'inv:' + o.id); S.invs = S.invs.filter(o => keep.has(o.id)); S.inbox = S.inbox.filter(x => !gone.includes(x.link)); if (gone.includes('inv:' + S.inv) && S.modal === 'inv') S.modal = null; }   // 以机构端为准：机构端已经没有的邀约，学生端也删掉
     (ev.invs || []).forEach(v => { const o = (S.invs || []).find(x => x.id === v.id); if (!o || o.st !== v.st || o.ver !== v.ver || o.start !== v.start) invUpd(v); }); msg = ''; }

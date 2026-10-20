@@ -82,7 +82,7 @@ Object.assign(ACT, {
 if (!RULES.allConfirm) { BOOK.forEach(b => { b.fresh = false; }); RULES.allConfirm = 1; }
 if (typeof LY_in === 'function') {
   const _lyIn19 = LY_in; LY_in = function (ev) { if (ev.t === 'intake' && (!ev.intake || !['sent', 'skipped'].includes(ev.intake.st))) return ''; if (ev.t !== 'book') return _lyIn19(ev);
-    const r = _lyIn19(ev), s = LY_CORE()[ev.core], b = s && lyBook(s); if (!b) return r;
+    const r = _lyIn19(ev), s = LY_CORE()[ev.core], b = s && lyBook(s); if (!b || b.cid !== ev.cid || b.day !== lyDay(ev.date) || b.t !== ev.ti) return r;
     if (b.st === 'ok' && b.fresh) { b.st = 'confirm'; b.fresh = false; if (S.uid) render(); }
     if (ev.inv) b.src = '主动邀约';
     return `${s.name} 提交了预约申请，已出现在 ${ST(b.cid).name} 的「待确认申请」里`; };

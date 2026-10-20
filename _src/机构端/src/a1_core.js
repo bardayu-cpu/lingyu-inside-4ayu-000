@@ -74,7 +74,7 @@ const fOver = s => fdueNow(s) && fLeft(s) < -RULES.lim.fdue;
 const fdueTag = s => fOver(s) ? `<span class="due r">逾期 ${dur(fLeft(s))}</span>` : `<span class="due w">已到期 ${dur(fLeft(s))}</span>`;
 const holder = s => s.stage === 'L1' ? s.follower : s.stage === 'L2' ? s.assignee : s.stage === 'follow' ? (s.owner || s.follower) : s.stage === 'L3' ? null : null;
 const byDue = a => a.slice().sort((x, y) => (leftOf(x) ?? fLeft(x) ?? 1e9) - (leftOf(y) ?? fLeft(y) ?? 1e9));
-const activeBook = s => BOOK.find(b => b.sid === s.id && ['audit', 'confirm', 'ok', 'change', 'pool'].includes(b.st));
+const activeBook = s => BOOK.find(b => b.sid === s.id && ['audit', 'confirm', 'ok', 'change', 'pool', 'move', 'adjust'].includes(b.st));
 const bLimit = b => SU(b.sid) && curLv(SU(b.sid)) >= 5 ? RULES.lim.book5 : RULES.lim.book;
 const bLeft = b => ['audit', 'confirm'].includes(b.st) ? bLimit(b) - hrs(b.at) : null;
 const auditor = b => b.auditor || SU(b.sid).follower;
@@ -90,7 +90,20 @@ const todayIdx = () => DAYS.findIndex(d => sameDay(d, NOW));
 /* 未提交排班：接下来两个工作日，某位咨询师一个时段都没开放 */
 const UNPUB = () => { const r = [], t = todayIdx(); ['c1', 'c2', 'c3', 'c4', 'c5'].forEach(c => [t + 1, t + 2].forEach(d => { if (d > 0 && d < DAYS.length && SCHED[c][d].every(v => v === 'off')) r.push({ cid: c, day: dayLbl(d), d }); })); return r; };
 const slotTxt = b => `${dayLbl(b.day)} ${TIMES[b.t]}`;
+const slotISO = d => { const x = new Date(d); return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`; };
+const slotKey = (cid, date, time) => `${cid}|${slotISO(date)}|${time}`;
+const bookOccupies = b => ['audit', 'confirm', 'ok', 'change', 'pool', 'move', 'record'].includes(b.st);
+function slotConflict(cid, day, t, excludeBid) { return BOOK.find(b => b.id !== excludeBid && b.cid === cid && bookOccupies(b) && slotKey(cid, DD(b.day), TIMES[b.t]) === slotKey(cid, DD(day), TIMES[t])); }
+function schedAvailable(cid, date, time, excludeBid) {
+  const day = DXL.findIndex(d => slotISO(d) === slotISO(date)), t = TIMES.indexOf(time);
+  if (day < 0 || t < 0 || !SCHED[cid] || slotConflict(cid, day, t, excludeBid)) return false;
+  const row = typeof SCHM !== 'undefined' && SCHM[cid] && SCHM[cid][`${DD(day).getMonth() + 1}/${DD(day).getDate()}`];
+  const value = row ? row[t] : SCHED[cid][day] && SCHED[cid][day][t];
+  return value === 'open' || value === 'bk' && BOOK.some(b => b.id === excludeBid && b.cid === cid && b.day === day && b.t === t && bookOccupies(b));
+}
+function canTakeSlot(cid, day, t, excludeBid, sid) { return !!DD(day) && schedAvailable(cid, DD(day), TIMES[t], excludeBid) && (typeof ivSlotAllowed !== 'function' || ivSlotAllowed(sid, cid, slotISO(DD(day)), TIMES[t], excludeBid)); }
 function setSlot(cid, day, t, v) { if (day >= 0 && SCHED[cid] && SCHED[cid][day]) SCHED[cid][day][t] = v; }
+const bookChanged = (b, action) => { if (typeof ivBookChanged === 'function') ivBookChanged(b, action); };
 
 /* ---------- 日志与通知 ---------- */
 function log(t, s, o = {}) {
