@@ -62,6 +62,12 @@ with sync_playwright() as p:
         chk(E('S.ik.probe') and page.locator('#ikTxt').input_value() == '主要在晚上出现', 'Q09 probe input and step resume')
         page.locator('[data-act=ikNextQ]').click()
         chk(E('S.ik.ans.trouble') == '很累；主要在晚上出现', 'Q09 resumed probe appends once')
+        E('ACT.zIk();render()')
+        page.locator('[data-bind="ikS.trouble"]').fill('在摘要页修改后先保存的内容')
+        page.locator('[data-act=ikDraft]').click()
+        page.locator('[data-act=ivIkGo]').click()
+        chk(E('S.ik.phase') == 'review' and page.locator('[data-bind="ikS.trouble"]').input_value() == '在摘要页修改后先保存的内容', 'Q09 review draft retains edits and resumes review')
+        chk(E('S.ikOk') is False, 'Q09 resumed review still requires sharing consent')
 
     if want('Q08'):
         E("reset('A');prepare('home');render();ACT.go('book');render()")

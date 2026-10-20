@@ -54,7 +54,7 @@ const ikNeedT2 = () => ikCfg().t2on && (!!S.walkin || !ikPrev());
 function ikFill(text) { const prev = ikPrev(), v = { 接待老师: LANG === 'en' ? (S.hold ? C(S.hold.pick.cid) : S.bk ? C(S.bk.cid) : null)?.name || 'your counsellor' : ikTeacher(), 上次聊到的话题: prev ? prev.map(T).join(L('、', ', ')) : '' };
   return (text || '').split(/(?<=[。！？.!?])\s*/).filter(s => !/\{(\w+|[一-龥]+)\}/.test(s) || [...s.matchAll(/\{([^}]+)\}/g)].every(m => v[m[1]])).map(s => s.replace(/\{([^}]+)\}/g, (_, k) => v[k] ?? '')).join(LANG === 'en' ? ' ' : ''); }
 /* 当前输入也属于草稿；关闭或倒计时保存不能只看已点「下一题」的答案。 */
-function ikDraftAnswers(ik) { const ans = { ...ik.ans }, q = ik.phase === 'q' && ik.qs[ik.i]; if (!q) return ans;
+function ikDraftAnswers(ik) { const ans = { ...ik.ans }; if (ik.phase === 'review') { ik.qs.forEach(q => { const v = (S.ikS[q.k] || '').trim(); ans[q.k] = q.type === 'multi' ? v.split(/[、,，]\s*/).filter(Boolean) : v; }); return ans; } const q = ik.phase === 'q' && ik.qs[ik.i]; if (!q) return ans;
   if (q.type === 'multi') { const own = (ik.own || '').split(/[、,，]\s*/).map(x => x.trim()).filter(Boolean); if ((ik.sel || []).length || own.length) ans[q.k] = [...(ik.sel || []), ...own]; }
   else if (q.type === 'text') { const txt = (ik.txt || '').trim(); if (txt) ans[q.k] = ik.probe && ans[q.k] ? `${ans[q.k]}；${txt}` : txt; }
   return ans; }
@@ -70,7 +70,8 @@ function ikStart(hold, resume) {
   if (cursor && cursor.i >= 0 && cursor.i < qs.length) S.ik.i = cursor.i;
   else if (keep) { const n = qs.findIndex(q => S.ik.ans[q.k] == null); S.ik.i = n < 0 ? qs.length - 1 : n; }
   ikLoad();
-  if (cursor) { Object.assign(S.ik, { probe: !!cursor.probe, probed: { ...(cursor.probed || {}) }, txt: cursor.txt || '', own: cursor.own || '', sel: (cursor.sel || []).slice() }); if (cursor.probe) S.ik.ans[qs[S.ik.i].k] = cursor.base; }
+  if (cursor && cursor.phase === 'review') ikToReview();
+  else if (cursor) { Object.assign(S.ik, { probe: !!cursor.probe, probed: { ...(cursor.probed || {}) }, txt: cursor.txt || '', own: cursor.own || '', sel: (cursor.sel || []).slice() }); if (cursor.probe) S.ik.ans[qs[S.ik.i].k] = cursor.base; }
   S.page = 'intake'; S.modal = null; S.pageTop = true;
 }
 /* 进入某一题时，把已有回答放进输入区 */
@@ -91,7 +92,7 @@ function ikAnswer(v) { const ik = S.ik, q = ik.qs[ik.i];
 function ikFinish(st) {
   const ik = S.ik, answers = st === 'draft' ? ikDraftAnswers(ik) : ik.ans, sum = st === 'sent' || st === 'draft' ? ik.qs.map(q => ({ k: q.k, name: q.name, v: ik.phase === 'review' ? (S.ikS[q.k] || '').trim() : ikVal(q, answers[q.k]) })) : null;
   const prev = (S.bk && S.bk.intake) || {}, it = { st, at: new Date(NOW), sum: sum || prev.sum || null, crisis: ik.crisis || !!prev.crisis, ver: (prev.ver || 0) + 1, viewed: st === 'sent' ? false : !!prev.viewed, mode: IK_MODE, tk: ik.tk, tv: ik.tv, qs: ik.qs, ans: answers, adds: prev.adds || [] };
-  if (st === 'draft') it.cursor = { i: ik.i, probe: !!ik.probe, probed: { ...ik.probed }, txt: ik.txt || '', own: ik.own || '', sel: (ik.sel || []).slice(), base: ik.probe ? ik.ans[ik.qs[ik.i].k] : null };
+  if (st === 'draft') it.cursor = { i: Math.min(ik.i, ik.qs.length - 1), phase: ik.phase, probe: !!ik.probe, probed: { ...ik.probed }, txt: ik.txt || '', own: ik.own || '', sel: (ik.sel || []).slice(), base: ik.probe && ik.qs[ik.i] ? ik.ans[ik.qs[ik.i].k] : null };
   const topicsOf = () => { const t = ik.qs.find(q => q.useTopics); return t ? (Array.isArray(ik.ans[t.k]) ? ik.ans[t.k] : []).filter(x => DATA.topics.includes(x)) : []; };
   if (ik.hold) { const h = S.hold; S.pick = h.pick; S.form = h.form; S.bkNote = h.note; S.form.topics = [...new Set([...S.form.topics, ...topicsOf()])]; S._ikPass = true; ACT.bookSubmit(); S._ikPass = false; S.hold = null; }
   else if (S.bk) S.bk.topics = [...new Set([...S.bk.topics, ...topicsOf()])];
@@ -193,7 +194,7 @@ Object.assign(ACT, {
   ikGoOn() { const ik = S.ik; ik.crisisAt = -1; ikNext(); },
   ikX() { const ik = S.ik; if (ik.phase === 'review' || ikHas(ik)) { S.modal = 'ikClose'; return; }
     if (ik.hold) { ikFinish('none'); S.modal = 'booked'; return; } S.ik = null; S.page = 'mybook'; S.pageTop = true; },
-  ikSave() { S.modal = null; const hold = S.ik.hold; if (S.ik.phase === 'review') ACT.ikBackQ(); ikFinish('draft'); if (hold) S.modal = 'booked'; },
+  ikSave() { S.modal = null; const hold = S.ik.hold; ikFinish('draft'); if (hold) S.modal = 'booked'; },
   ikQuit() { S.modal = null; const hold = S.ik.hold; ikFinish('skipped'); if (hold) S.modal = 'booked'; },
   ikOkT() { S.ikOk = !S.ikOk; },
   ikSendSum() { if (!S.ikOk) return; const hold = S.ik.hold; ikFinish('sent'); if (hold) S.modal = 'booked'; },
