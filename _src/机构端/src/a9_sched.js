@@ -8,6 +8,8 @@ const SCHM = {};
 SC.forEach((c, ci) => { SCHM[c] = {};
   [9, 10].forEach(m => { for (let day = 1; day <= 31; day++) { const d = new Date(2026, m, day); if (d.getMonth() !== m || [0, 6].includes(d.getDay())) continue;
     const di = DAYS.findIndex(x => dkey(x) === dkey(d)); SCHM[c][dkey(d)] = di >= 0 ? SCHED[c][di] : TIMES.map((_, ti) => ((ci + day + ti) % 3 === 0 ? 'off' : 'open')); } }); });
+/* 日期和钟点是跨端唯一键；SCHED 仅保留旧周视图兼容引用。 */
+function schedSlots() { const out = []; SC.forEach(cid => Object.entries(SCHM[cid]).forEach(([k, row]) => { const [m, day] = k.split('/').map(Number), date = new Date(2026, m - 1, day), di = DXL.findIndex(d => sameDay(d, date)); row.forEach((v, ti) => out.push({ key: slotKey(cid, date, TIMES[ti]), cid, date: slotISO(date), time: TIMES[ti], mode: '线下/线上', modes: ['线下', '线上'], place: '心理咨询中心', st: v === 'off' ? 'closed' : v === 'bk' || di >= 0 && slotConflict(cid, di, ti) ? 'bk' : 'open' })); })); return out; }
 const monday = d => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const isPast = d => d < new Date(2026, 9, 12);
 function schedGroup() {
@@ -34,7 +36,7 @@ Object.assign(ACT, {
   schClose() { S.schSel = null; S.mdraft = null; },
   mslot(a) { const [k, ti] = a.split('|'), c = S.schSel.c; S.mdraft = S.mdraft || {}; if (!S.mdraft[k]) S.mdraft[k] = SCHM[c][k].slice(); S.mdraft[k][ti] = S.mdraft[k][ti] === 'open' ? 'off' : 'open'; },
   mDiscard() { S.mdraft = {}; },
-  mSave() { const c = S.schSel.c, ch = []; Object.entries(S.mdraft || {}).forEach(([k, arr]) => { arr.forEach((v, i) => { if (v !== SCHM[c][k][i]) ch.push(`${k} ${TIMES[i]} ${v === 'open' ? '开放' : '关闭'}`); }); SCHM[c][k].splice(0, 4, ...arr); });
+  mSave() { const c = S.schSel.c, ch = []; Object.entries(S.mdraft || {}).forEach(([k, arr]) => { arr.forEach((v, i) => { if (v !== SCHM[c][k][i]) ch.push(`${k} ${TIMES[i]} ${v === 'open' ? '开放' : '关闭'}`); }); SCHM[c][k].splice(0, TIMES.length, ...arr); const di = DAYS.findIndex(d => dkey(d) === k); if (di >= 0) SCHED[c][di] = SCHM[c][k]; });
     notify(c, '站内 + 短信', `${ST(me()).name} 调整了你的排班：${ch.join('、')}`, null); log(`调整 ${ST(c).name} 的排班：${ch.join('、')}`, null, { cat: '预约', obj: '排班' }); S.mdraft = {}; toast(`已保存，并同步给${ST(c).name}`); },
   schRemind() { UNPUB().forEach(u => notify(u.cid, '站内 + 短信', `请提交 ${u.day} 的排班`, null)); log(`提醒提交排班：${UNPUB().map(u => ST(u.cid).name).join('、')}`, null, { cat: '预约', obj: '排班' }); toast('已提醒'); },
 });

@@ -21,5 +21,6 @@ function LY_in(ev) { const b = S.bk; let msg = '';
     (ev.invs || []).forEach(v => { const o = (S.invs || []).find(x => x.id === v.id); if (!o || o.st !== v.st || o.ver !== v.ver || o.start !== v.start) invUpd(v); }); msg = ''; }
   else if (ev.t === 'invite' || ev.t === 'invUpd') { const o0 = (S.invs || []).find(x => x.id === ev.inv.id), same = o0 && o0.st === ev.inv.st && o0.start === ev.inv.start && o0.who === ev.inv.who; invUpd(ev.inv);
     msg = same ? '' : o0 && o0.st === 'frozen' && ['wait', 'wait2', 'ok'].includes(ev.inv.st) ? '学生收到「约谈恢复了」' : o0 ? `学生收到邀约更新：${({ wait: '老师改了时间，请学生再确认', wait2: '老师给了新时间', cancel: '老师取消了', frozen: '约谈先暂停', ok: '时间调整', expired: '原定时间已过', done: '已经聊过', no: '学生说这次不用了', change: '等老师给新时间' })[ev.inv.st] || '有更新'}` : '学生收到「老师约你聊聊」'; }
+  else if (ev.t === 'schedSync') { S._schedSnapshot = ev.slots || []; msg = ''; }
   else if (ev.t === 'cfg') { IK_MODE = ev.intakeMode; if (ev.ikt) IK_CFG = ev.ikt; if (ev.ikh) IK_CFG_H = ev.ikh; msg = ''; }
   render(); return msg; }

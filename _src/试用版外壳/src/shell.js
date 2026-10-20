@@ -64,6 +64,7 @@ window.addEventListener('message', e => {
     else { const core = last['学生端'] && last['学生端'].core; fromAdm(p, d.snap).filter(ev => ev.core === core).forEach(ev => post('学生端', { t: 'ev', ev })); }
     const iv = last['机构端'] && last['机构端'].__inv, sc = last['学生端'];
     if (iv && sc && (d.side === '学生端' ? d.init || (p && (p.scen !== d.snap.scen || p.inst !== d.snap.inst)) : !p)) post('学生端', { t: 'ev', ev: { t: 'invSync', invs: iv[sc.core] || [] } });
+    const schedule = last['机构端'] && last['机构端'].__sched; if (schedule && (d.side === '学生端' ? d.init || p && p.scen !== d.snap.scen : !p || JSON.stringify(p.__sched) !== JSON.stringify(schedule))) post('学生端', { t: 'ev', ev: { t: 'schedSync', slots: schedule } });
     const cf = last['机构端'] && last['机构端'].__cfg, pc = d.side === '机构端' && p && p.__cfg;
     if (cf && (d.side === '学生端' ? d.init : !pc || JSON.stringify(pc) !== JSON.stringify(cf))) post('学生端', { t: 'ev', ev: Object.assign({ t: 'cfg' }, cf) }); }
   else if (d.t === 'applied') syncNote(d.msg ? `${d.side === '机构端' ? '学生端 → 机构端' : '机构端 → 学生端'}：${d.msg}` : '');

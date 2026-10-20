@@ -102,7 +102,11 @@ function schedAvailable(cid, date, time, excludeBid) {
   return value === 'open' || value === 'bk' && BOOK.some(b => b.id === excludeBid && b.cid === cid && b.day === day && b.t === t && bookOccupies(b));
 }
 function canTakeSlot(cid, day, t, excludeBid, sid) { return !!DD(day) && schedAvailable(cid, DD(day), TIMES[t], excludeBid) && (typeof ivSlotAllowed !== 'function' || ivSlotAllowed(sid, cid, slotISO(DD(day)), TIMES[t], excludeBid)); }
-function setSlot(cid, day, t, v) { if (day >= 0 && SCHED[cid] && SCHED[cid][day]) SCHED[cid][day][t] = v; }
+function setSlot(cid, day, t, v) {
+  if (day < 0 || !DD(day) || !TIMES[t]) return;
+  if (SCHED[cid] && SCHED[cid][day]) SCHED[cid][day][t] = v;
+  if (typeof SCHM !== 'undefined' && SCHM[cid]) { const k = `${DD(day).getMonth() + 1}/${DD(day).getDate()}`; if (!SCHM[cid][k]) SCHM[cid][k] = TIMES.map(() => 'off'); SCHM[cid][k][t] = v; }
+}
 const bookChanged = (b, action) => { if (typeof ivBookChanged === 'function') ivBookChanged(b, action); };
 
 /* ---------- 日志与通知 ---------- */

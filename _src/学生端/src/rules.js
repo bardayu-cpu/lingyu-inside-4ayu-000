@@ -48,6 +48,15 @@ const NOW = new Date(2026, 9, 12, 10, 0);
 const DAYS = (() => { const r = []; const d = new Date(NOW); for (let i = 1; i <= 30; i++) { d.setDate(d.getDate() + 1); if (d.getDay() % 6) r.push(new Date(d)); } return r; })();
 /* 时段：咨询师在后台开放；需至少提前 24 小时；已被他人占用的显示为已约满 */
 function slotState(ci, di, ti) {
+  if (S._schedSnapshot) {
+    if (!DAYS[di] || !DATA.times[ti]) return 'closed';
+    const date = new Date(DAYS[di]), cid = DATA.counsellors[ci] && DATA.counsellors[ci].id, key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    const slot = S._schedSnapshot.find(x => x.cid === cid && x.date === key && x.time === DATA.times[ti]);
+    if (!slot || slot.st === 'closed') return 'closed';
+    const [h,m] = DATA.times[ti].split(':'); date.setHours(+h,+m,0,0);
+    if (date - NOW < 24 * 3600e3) return 'early';
+    return slot.st === 'open' ? 'open' : 'taken';
+  }
   if ((di * 5 + 2) % 7 === 0 || (ci + di) % 4 === 3) return 'closed';           // 有些日子老师不排班
   const open = (ci * 3 + di * 2 + ti) % 3 !== 0;
   if (!open) return 'closed';

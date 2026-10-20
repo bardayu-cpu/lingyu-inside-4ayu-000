@@ -3,7 +3,7 @@ const OBS = () => S.role === 'L1s' ? ['和同学来往明显变少', '宿舍或�
 const opts = (key, arr, dis = []) => `<div class="opts">${arr.map(x => `<button class="${S.form[key] === x ? 'on' : ''}" ${dis.includes(x) ? 'disabled' : `data-act="fset" data-arg="${key}|${x}"`}>${x}</button>`).join('')}</div>`;
 const ta = (key = 'note', ph = '') => `<textarea data-bind="form.${key}" placeholder="${ph}">${esc(S.form[key] || '')}</textarea>`;
 const fld = (label, inner) => `<div class="fld"><label>${label}</label>${inner}</div>`;
-const openSlots = (c, lead = 0) => { const r = []; SCHED[c].forEach((d, di) => d.forEach((v, ti) => { if (v === 'open' && slotDate(di, ti).getTime() > NOW.getTime() + lead * H) r.push(`${di}-${ti}`); })); return r; };
+const openSlots = (c, lead = 24) => { const r = []; DXL.forEach((d, di) => TIMES.forEach((_, ti) => { if (schedAvailable(c, d, TIMES[ti]) && slotDate(di, ti).getTime() >= NOW.getTime() + lead * H) r.push(`${di}-${ti}`); })); return r; };
 const slotPick = c => `<div class="opts">${openSlots(c).map(k => { const [d, t] = k.split('-').map(Number); return `<button class="${S.form.slot === k ? 'on' : ''}" data-act="fset" data-arg="slot|${k}">${dayLbl(d)} ${TIMES[t]}</button>`; }).join('') || '<span class="note">这位咨询师本周没有开放时段</span>'}</div>`;
 function modal() {
   const [k, rest] = S.mo.split(':'), id = rest || '', s = SU(id), F = S.form;
