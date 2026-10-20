@@ -246,12 +246,12 @@ Object.assign(ACT, {
     RULES.pool.apps.push({ id: 'ap' + (RULES.pool.apps.length + 1), col: F.apc, n, why: F.apw.trim(), by: me(), at: new Date(NOW), st: 'wait' }); log(`主动邀约 · 申请额度：${F.apc} ${n} 个`, null, { cat: '预约', obj: '号池' }); notify('c5', '站内', `${ST(me()).name} 申请 ${F.apc} 的邀约额度 ${n} 个`, null); S.mo = null; toast('已提交，中心负责人会在「号池配置」里处理'); },
   ivSendGo(t) { const L = ivMine().filter(x => x.st === 'new' && (t === 'all' || (+t >= 4 ? x.lv >= 4 : x.lv === +t))); if (!L.length) return; L.forEach(x => { x.st = 'sent'; x.at = new Date(NOW); x.due = ivDue(2); });
     log(`主动邀约 · 发邀约卡 ${L.length} 人（${t === 'all' ? '全部' : +t >= 4 ? '4 级及以上' : `${t} 级`}）`, null, { cat: '预约', obj: '主动邀约' }); S.mo = null; toast(`已发给 ${L.length} 位学生，24 小时后自动提醒一次`); },
-  ivAddGo() { const B = ivb(), F = S.form, ids = [...new Set([...(F.ivPick || []), ...(F.ivIds || '').split(/[\s,，、]+/).filter(Boolean)])], res = { in: [], bad: [], skip: [], has: [] };
+  ivAddGo() { if (S.role !== 'L3') return toast('只有中心负责人能添加学生'); const B = ivb(), F = S.form; if (F.ivFileBusy) return toast('表格还在读取，请稍后'); const ids = [...new Set([...(F.ivPick || []), ...(F.ivIds || '').split(/[\s,，、]+/).filter(Boolean), ...ivFileIds(F)])], res = { in: [], bad: [], skip: [], has: [] };
     ids.forEach(id => { const s = STU.find(x => x.id === id || x.sid === id); if (!s) return res.bad.push(`${id}：不在名册`);
       if (CRISES.some(k => k.sid === s.id && k.st !== 'closed')) return res.skip.push(`${nm(s)}：危机中`);
       if (B.list.some(x => x.sid === s.id)) return res.has.push(`${nm(s)}：已在批次里`); if (activeBook(s)) return res.has.push(`${nm(s)}：已有在途预约`);
       B.list.push({ sid: s.id, lv: curLv(s), st: 'new', resp: ivResp(s) }); res.in.push(nm(s)); });
-    if (!ids.length) return toast('请勾选学生或粘贴学号'); log(`主动邀约 · 加学生：进入批次 ${res.in.length} · 对不上 ${res.bad.length} · 不走预约队列 ${res.skip.length} · 已有安排 ${res.has.length}`, null, { cat: '预约', obj: '主动邀约' }); S.ivRes = res; S.mo = 'ivRes:'; },
+    if (!ids.length) return toast('请勾选学生、粘贴学号，或导入表格并核对学号列'); log(`主动邀约 · 加学生：进入批次 ${res.in.length} · 对不上 ${res.bad.length} · 不走预约队列 ${res.skip.length} · 已有安排 ${res.has.length}`, null, { cat: '预约', obj: '主动邀约' }); S.ivRes = res; S.mo = 'ivRes:'; },
   schedRegGo() { const F = S.form; if (!F.rgc || !F.rgt || !(F.rgd || '').trim()) return toast('请选老师、类型，写日期');
     if (S.role !== 'L3' && !(S.role === 'L2' && F.rgc === me())) return toast('只能登记本人排班');
     const range = schedRegRange(F.rgd); if (!range) return toast('请输入有效日期，例如 2026-10-23 或 10/23 下午');
@@ -272,7 +272,7 @@ const _md19 = modal; modal = function () { const [k, id] = (S.mo || '').split(':
     return mbox('加学生到批次', '三种方式都行。系统核对后分四堆：进入批次、对不上、不走预约队列、已有安排。', `<div class="opts" style="margin-bottom:10px">${[['pick', '从普测结果里勾'], ['paste', '粘贴学号'], ['file', '导入表格']].map(([k2, n]) => `<button class="${tab === k2 ? 'on' : ''}" data-act="fset" data-arg="ivt|${k2}">${n}</button>`).join('')}</div>` +
       (tab === 'pick' ? `<table class="t"><tr><th></th><th>学生</th><th>等级</th><th>学院</th></tr>${C.map(s => `<tr><td><input type="checkbox" data-act="ivPickT" data-arg="${s.id}" ${pk.includes(s.id) ? 'checked' : ''}></td><td>${nm(s)}</td><td>${lvV(s)}</td><td>${s.college}</td></tr>`).join('')}</table>`
         : tab === 'paste' ? fld('学号（一行一个，或用逗号隔开）', `<textarea data-bind="form.ivIds" rows="4" placeholder="${SURV().slice(0, 2).map(s => s.sid).join('&#10;')}">${esc(F.ivIds || '')}</textarea>`)
-        : `<div class="dbox"><p style="margin:0">上传 Excel 或 CSV，第一列是学号。演示里没有真的上传，用「粘贴学号」试一样的核对。</p></div>`), '核对并加入', 'ivAddGo', '', true); }
+        : ivFileBox(F)), '核对并加入', 'ivAddGo', '', true); }
   if (k === 'ivRes') { const r = S.ivRes || { in: [], bad: [], skip: [], has: [] };
     return mbox('核对结果', '', [['进入批次', r.in], ['对不上', r.bad], ['不走预约队列', r.skip], ['已有安排', r.has]].map(([n, L]) => `<div class="kv"><span>${n}（${L.length}）</span><b>${L.join('、') || '—'}</b></div>`).join(''), '', '', ''); }
   if (k === 'ivIk') { const x = ivMine().find(v => v.sid === id), s = SU(id), it = x && x.ik; if (!it || !it.sum) return _md19();
