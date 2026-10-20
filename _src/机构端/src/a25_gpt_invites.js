@@ -68,10 +68,29 @@ function ivBookChanged(b,action) {
   x.bid=b.id;
   if (action==='confirm' || action==='accept' || action==='moveAccept') { x.st='ok'; delete x.holdKey; }
   else if (action==='submit' || action==='move') { x.st='sub'; delete x.holdKey; }
-  else if (action==='decline' || action==='cancel') { x.st='entry'; x.note=b.declineNote || ''; }
+  else if (action==='decline' || action==='cancel') {
+    x.st='entry'; x.note=b.declineNote || ''; x.entryUntil=new Date(+NOW+48*H).toISOString(); x.edue=ivStamp(x.entryUntil);
+    delete x.entryReminded; delete x.lateType;
+    if (x.returnHoldKey) x.holdKey=x.returnHoldKey;
+    // 自愿取消释放了原时段；没有可保护的替代时段时回到队列。
+    if (action==='cancel' && !ivMatch(ivEntries(),ivPool().invite)) { x.st='queue';x.priorityReturn=1;delete x.holdKey; }
+  }
   else if (action==='adjust') { x.st='adjust'; x.note='老师临时停诊，中心会重新安排'; delete x.holdKey; }
   ivBump(x); ivAllocate();
 }
+/* R6/R12：按时提交即履行提交期限；老师婉拒后重新给完整的选时窗口。 */
+const _ivDeclineGpt=ACT.bNoOk; ACT.bNoOk=function(id) {
+  const b=BOOK.find(v=>v.id===id), x=b && ivIdentity().list.find(v=>v.id===b.ivId || v.bid===b.id);
+  if (x && mayBook(b) && ['confirm','move'].includes(b.st) && S.form.why) {
+    const trial={...x,st:'entry',entryUntil:new Date(+NOW+48*H).toISOString()}, P=ivPool();
+    const released=schedSlots().find(s=>s.key===`${b.cid}|${slotISO(DD(b.day))}|${TIMES[b.t]}`);
+    const slots=P.invite.slice(); if (released && !slots.some(s=>s.key===released.key)) slots.push(released);
+    const plan=ivMatch([...ivEntries().filter(v=>v.id!==x.id),trial],slots);
+    if (!plan) return toast('目前没有可供学生重新选择的时间。请先补充排班，或与学生商量后提出新时间。');
+    x.returnHoldKey=plan[x.id];
+  }
+  try { return _ivDeclineGpt.apply(this,arguments); } finally { if(x) delete x.returnHoldKey; }
+};
 function ivAllowedPublic() { const out={}, P=ivPool(); Object.entries(LY_CORE()).forEach(([k,s]) => { out[k]=P.slots.filter(x=>ivSlotAllowed(s.id,x.cid,x.date,x.time,(lyBook(s)||{}).id,P)).map(x=>x.key); }); return out; }
 
 function ivPublic() {
