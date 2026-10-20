@@ -116,6 +116,30 @@ with sync_playwright() as p:
         save.click()
         chk('已保存' in page.locator('#toast').inner_text(), 'Q16 schedule save action remains reachable')
 
+    if want('R19'):
+        page.goto(Path(os.environ['STU_HTML']).as_uri())
+        for lang in ['zh', 'en']:
+            E("reset('A');prepare('home');setLang('" + lang + "');render()")
+            quizzes = E('DATA.fun.map(x=>({k:x.k,n:x.items.length,max:x.ab?1:x.opts.length-1}))')
+            for quiz in quizzes:
+                for answer in [0, quiz['max']]:
+                    E('(v => {const x=DATA.fun.find(x=>x.k===v.k);S.fun.cur=v.k;S.fun.res[v.k]={a:x.items.map(()=>v.a),at:new Date(NOW)};S.page="funres";render()})', {'k': quiz['k'], 'a': answer})
+                    text = page.locator('.res').inner_text()
+                    chk(not any(word in text for word in ['得分', 'Score', '%', '压力较低', '中等压力', '压力较高', '幸福感偏低', 'Low stress', 'Moderate stress', 'High stress', 'Wellbeing on the low side']), f'R19 {lang}/{quiz["k"]}/{answer} hides numeric scores and risk classification')
+                    chk(page.locator('.res .gauge,.res .lvl,.res .trait .bar').count() == 0 and len(text) > 8, f'R19 {lang}/{quiz["k"]}/{answer} retains advice without score gauge')
+                    chk(page.locator('[data-act=funStart]').count() == 1, f'R19 {lang}/{quiz["k"]}/{answer} retains retake action')
+        # Completion must invite only level 4 or 5, with no risk number in the student card.
+        for level in range(1, 6):
+            E("reset('A');prepare('chat');S.task.scaleLv=" + str(min(level, 4)) + ";S.task.concern=0;S.task.crisis=" + ('true' if level == 5 else 'false') + ";finish();render()")
+            chk(E('S.modal') == ('invite' if level >= 4 else 'done'), f'screening level {level} has the required completion/invitation card')
+            chk(not any(word in page.locator('#modal').inner_text() for word in ['风险等级', '得分', '级']), f'screening level {level} hides risk numbers')
+            if level >= 4:
+                page.locator('[data-act=inviteNo]').click()
+                chk(E('S.modal') == 'done', f'screening level {level} decline returns to end card')
+                E("S.invited=false;S.bk=null;finish();render()")
+                page.locator('[data-act=inviteGo]').click()
+                chk(E('S.page') == 'book' and E('S.modal') is None, f'screening level {level} accept opens booking')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 

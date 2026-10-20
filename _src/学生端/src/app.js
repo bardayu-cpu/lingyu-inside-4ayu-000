@@ -379,27 +379,26 @@ function qrSvg(seed = 7) {
   return `<svg class="qrc" viewBox="-1 -1 27 27" aria-label="QR"><g fill="#43413A">${cell.join('')}</g></svg>`;
 }
 
-/* ---------- 趣味测试结果（仅学生自己可见） ---------- */
+/* ---------- 趣味测试结果（仅学生自己可见；只呈现文字建议，不展示分数或风险分档） ---------- */
 function funResult() {
   const x = DATA.fun.find(y => y.k === S.fun.cur), r = S.fun.res[x.k], a = r.a, sc = FUNSCORE[x.k](x, a);
-  const gauge = (pct, lo, hi) => `<div class="gauge"><i style="left:${pct}%"></i></div><div class="gl"><span>${lo}</span><span>${hi}</span></div>`;
   let body = '', more = '';
   if (x.k === 'big5') body = `<p>${L('五种特质没有好坏之分，它们一起组成了你的样子。', 'None of these traits is good or bad — together they make up who you are.')}</p>` +
-    sc.map(s => { const tr = x.traits[s.k]; return `<div class="trait"><b>${tr[0]}</b><span class="bar"><i style="width:${s.pct}%"></i></span><span>${s.pct}%</span><small>${s.pct >= 60 ? tr[1] : s.pct <= 40 ? tr[2] : L('两端之间，比较平衡', 'Somewhere in between')}</small></div>`; }).join('');
+    sc.map(s => { const tr = x.traits[s.k]; return `<div class="trait"><b>${tr[0]}</b><small style="grid-column:2/-1;margin-top:0">${s.pct >= 60 ? tr[1] : s.pct <= 40 ? tr[2] : L('两端之间，比较平衡', 'Somewhere in between')}</small></div>`; }).join('');
   if (x.k === 'type16') { const code = sc.map(s => x.dims[s.d][s.side][0]).join(' ');
     body = `<div class="big">${code}</div><p>${L('四个字母只代表你目前的倾向，没有好坏之分，也会随着经历改变。', 'These letters show your current leanings — not a fixed label, and they can change over time.')}</p>` +
       sc.map(s => { const [l, r2] = x.dims[s.d]; return `<div class="dim"><span class="${s.side === 0 ? 'on' : ''}">${l[1]} ${l[0]}</span><span class="mid"><i style="left:${s.side === 0 ? '12%' : '76%'}"></i></span><span class="${s.side === 1 ? 'on' : ''}">${r2[0]} ${r2[1]}</span></div>`; }).join(''); }
   if (x.k === 'pss') { const band = sc <= 13 ? 0 : sc <= 26 ? 1 : 2;
-    body = `<div class="lvl">${[L('压力较低', 'Low stress'), L('中等压力', 'Moderate stress'), L('压力较高', 'High stress')][band]}</div><p>${L(`得分 ${sc} / 40`, `Score ${sc} / 40`)}</p>${gauge(sc / 40 * 100, L('较低', 'Low'), L('较高', 'High'))}<p style="margin-top:14px">${[L('最近你对生活的掌控感不错，继续保持适合自己的节奏。', 'You’ve felt fairly in control lately — keep the rhythm that works for you.'), L('最近有些事情让你感到吃力，这很常见。给自己留一点放松的时间。', 'Some things have felt like a lot lately — that’s common. Leave yourself time to unwind.'), L('最近压力不小。试试呼吸练习，也可以找人聊聊，不用一个人扛。', 'It’s been a stressful stretch. Try a breathing practice, and remember you don’t have to carry it alone.')][band]}</p>`;
+    body = `<p>${[L('最近你对生活的掌控感不错，继续保持适合自己的节奏。', 'You’ve felt fairly in control lately — keep the rhythm that works for you.'), L('最近有些事情让你感到吃力，这很常见。给自己留一点放松的时间。', 'Some things have felt like a lot lately — that’s common. Leave yourself time to unwind.'), L('最近压力不小。试试呼吸练习，也可以找人聊聊，不用一个人扛。', 'It’s been a stressful stretch. Try a breathing practice, and remember you don’t have to carry it alone.')][band]}</p>`;
     more = `<button class="btn soft" data-act="gOpen" data-arg="g1:0">${L('试试 4-7-8 呼吸练习', 'Try 4-7-8 Breathing')}</button>`; }
   if (x.k === 'who5') { const low = sc < 50;
-    body = `<div class="lvl">${low ? L('幸福感偏低', 'Wellbeing on the low side') : L('幸福感良好', 'Wellbeing looks good')}</div><p>${L(`得分 ${sc} / 100`, `Score ${sc} / 100`)}</p>${gauge(sc, '0', '100')}<p style="margin-top:14px">${low ? L('最近两周过得不太轻松。如果这种状态持续两周以上，可以约一位老师聊聊。', 'The last two weeks haven’t been easy. If this lasts more than two weeks, consider talking to a counsellor.') : L('最近两周你的状态不错，记得照顾好自己。', 'You’ve been doing well these two weeks. Keep looking after yourself.')}</p>`;
+    body = `<p>${low ? L('最近两周过得不太轻松。如果这种状态持续两周以上，可以约一位老师聊聊。', 'The last two weeks haven’t been easy. If this lasts more than two weeks, consider talking to a counsellor.') : L('最近两周你的状态不错，记得照顾好自己。', 'You’ve been doing well these two weeks. Keep looking after yourself.')}</p>`;
     more = low ? `<button class="btn soft" data-act="go" data-arg="book">${L('预约咨询', 'Book a session')}</button>` : ''; }
   if (x.k === 'rse') { const band = sc < 25 ? 0 : sc < 35 ? 1 : 2;
-    body = `<div class="lvl">${[L('对自己有些苛刻', 'A bit hard on yourself'), L('比较平衡', 'Fairly balanced'), L('对自己比较认可', 'Positive about yourself')][band]}</div><p>${L(`得分 ${sc} / 40`, `Score ${sc} / 40`)}</p>${gauge((sc - 10) / 30 * 100, L('较低', 'Lower'), L('较高', 'Higher'))}<p style="margin-top:14px">${[L('你可能常常对自己不太满意。试着记下每天做成的一件小事，哪怕很小。', 'You may often feel unsatisfied with yourself. Try noting one small thing you did well each day.'), L('你对自己的看法总体平衡，有认可也有期待。', 'You see yourself in a balanced way — some pride, some room to grow.'), L('你对自己有比较稳定的认可，这是很好的心理资源。', 'You have a steady sense of your own worth — a real strength.')][band]}</p>`;
+    body = `<p>${[L('你可能常常对自己不太满意。试着记下每天做成的一件小事，哪怕很小。', 'You may often feel unsatisfied with yourself. Try noting one small thing you did well each day.'), L('你对自己的看法总体平衡，有认可也有期待。', 'You see yourself in a balanced way — some pride, some room to grow.'), L('你对自己有比较稳定的认可，这是很好的心理资源。', 'You have a steady sense of your own worth — a real strength.')][band]}</p>`;
     more = `<button class="btn soft" data-act="gOpen" data-arg="g3:0">${L('看看「情绪是怎么来的」', 'Watch “Where Emotions Come From”')}</button>`; }
-  if (x.bands) { const bi = x.bands.findIndex(b => sc < b[0]), b = x.bands[bi < 0 ? x.bands.length - 1 : bi], max = x.k === 'ucla3' ? 9 : x.k === 'gse' ? 40 : 5, min = x.k === 'ucla3' ? 3 : x.k === 'gse' ? 10 : 1;
-    body = `<div class="lvl">${b[1]}</div><p>${L(`得分 ${sc} ${x.unit}`, `Score ${sc} ${x.unit}`)}</p>${gauge((sc - min) / (max - min) * 100, L('较低', 'Lower'), L('较高', 'Higher'))}<p style="margin-top:14px">${b[2]}</p>`;
+  if (x.bands) { const bi = x.bands.findIndex(b => sc < b[0]), b = x.bands[bi < 0 ? x.bands.length - 1 : bi];
+    body = `<p>${b[2]}</p>`;
     if (x.k === 'ucla3' && bi !== 0) more = `<button class="btn soft" data-act="gOpen" data-arg="g6:0">${L('看看新生适应小组', 'See the support group')}</button>`; }
   return tpl('p-funres', { name: x.name, date: dateTxt(r.at), body, more: more + `<button class="btn ghost" data-act="funStart" data-arg="${x.k}:1">${L('重新测一次', 'Take it again')}</button>` });
 }
