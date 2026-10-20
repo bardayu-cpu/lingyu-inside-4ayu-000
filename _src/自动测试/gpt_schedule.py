@@ -25,6 +25,8 @@ with sync_playwright() as p:
         r=A.evaluate("""(()=>{const day=3,t=3,cid='c1'; BOOK.filter(b=>b.cid===cid&&b.day===day&&b.t===t).forEach(b=>b.st='cancelled'); setSlot(cid,day,t,'open'); SCHM[cid][dkey(DD(day))][t]='open'; const event={t:'book',core:'lin',cid,date:DD(day).toISOString(),ti:t}; LY_in(event); const a=lyBook(CORE.lin); const n=BOOK.length; LY_in({...event,core:'chen'}); const collision=BOOK.slice(n).some(b=>b.sid===CORE.chen.id); const dup={id:'dup',sid:CORE.wang.id,cid,day,t,st:'confirm',at:new Date(NOW)}; BOOK.push(dup); ACT.bOk('dup'); return {collision,a:a&&a.st,duplicate:dup.st,reject:!!RULES.bookReject.chen};})()""")
         chk(r['a']=='confirm' and not r['collision'] and r['reject'],'Q01 submit rejects slot conflict')
         chk(r['duplicate']=='confirm','Q01 confirm rechecks conflict')
+        early=A.evaluate("(()=>{const n=BOOK.length;setSlot('c2',0,3,'open');LY_in({t:'book',core:'huang',cid:'c2',date:DD(0).toISOString(),ti:3});return BOOK.length===n;})()")
+        chk(early,'Q01 booking endpoint enforces 24-hour lead')
     def q02():
         A.evaluate("const day=8,t=0,cid='c1'; setSlot(cid,day,t,'open');render()")
         wait()
