@@ -99,6 +99,23 @@ with sync_playwright() as p:
         chk('A · 预约申请提交后' in text and '预约成功之后' not in text, 'Q14 admin placement option and comparison table say request submitted')
         chk(page.locator('[data-bind=intakeMode]').input_value() == 'A', 'Q14 placement default unchanged')
 
+    if want('Q16'):
+        page.goto(Path(os.environ['ADM_HTML']).as_uri())
+        E("enter('c5','L3');go('booking');S.tabs.booking='sched';render()")
+        page.locator('[data-act=schPick][data-arg="c1|10/21"]').click()
+        save = page.locator('[data-act=mSave]')
+        save.scroll_into_view_if_needed()
+        first = page.locator('.mdetail [data-act=mslot]').first
+        first.click()
+        save.scroll_into_view_if_needed()
+        a = save.bounding_box()
+        b = page.locator('.abtn').bounding_box()
+        overlap = max(0, min(a['x']+a['width'], b['x']+b['width'])-max(a['x'], b['x'])) * max(0, min(a['y']+a['height'], b['y']+b['height'])-max(a['y'], b['y']))
+        chk(overlap == 0, 'Q16 assistant does not overlap the schedule save button at 1440x1000')
+        chk(E("(() => {const e=document.querySelector('[data-act=mSave]'),r=e.getBoundingClientRect();return document.elementFromPoint(r.right-8,r.bottom-8)===e})()"), 'Q16 save button lower-right corner is clickable')
+        save.click()
+        chk('已保存' in page.locator('#toast').inner_text(), 'Q16 schedule save action remains reachable')
+
     chk(not errors, 'no browser page errors: ' + repr(errors))
     browser.close()
 

@@ -420,3 +420,6 @@ body.vsplit #pg .t tr>:nth-child(3),body.vsplit #pg .t tr>:nth-child(4){display:
 .bkpin{border-color:var(--pri2)}
 .dbox.warn{background:#fff6e8}
 button.kpi{text-align:left;cursor:pointer;font:inherit}button.kpi.on{outline:2px solid var(--pri2)}
+/* Q16：展开周排班时为悬浮入口留出独立底栏，避免覆盖保存操作。 */
+.main:has(.mdetail){padding-bottom:72px}
+.main:has(.mdetail)>.abtn{bottom:14px}
