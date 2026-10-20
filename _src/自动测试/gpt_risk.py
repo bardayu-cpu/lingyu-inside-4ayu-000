@@ -75,7 +75,29 @@ def r11(page):
     assert page.evaluate("activeRisk().length === 1 && activeRisk()[0].id === existingRiskId && activeRisk()[0].urgent"), 'edited record must also upgrade the existing crisis'
 
 
-CASES = {'R10': r10, 'R11': r11}
+def r18(page):
+    page.evaluate("""() => {
+      makeRiskRec('最近睡不着'); recSave(false);
+      window.riskTid = TALKS[TALKS.length - 1].id;
+    }""")
+    assert page.evaluate("activeRisk().length === 0 && !TALKS.find(t => t.id === riskTid).risk"), 'level-3 signal must not report'
+    assert page.evaluate("TALKS.find(t => t.id === riskTid).auxSignals.some(x => x.word === '睡不着' && x.source === 'record')"), 'level-3 common text must persist as auxiliary metadata'
+    page.evaluate("S.rv = riskTid; S.mo = null")
+    assert page.evaluate("recView().includes('辅助信号（不单独报告）')"), 'staff record view must identify auxiliary signal'
+    page.evaluate("""() => {
+      S.form = { add: '最近很悲伤' }; ACT.tkAddGo(riskTid);
+      S.form = { add: '并非悲伤' }; ACT.tkAddGo(riskTid);
+    }""")
+    assert page.evaluate("activeRisk().length === 0 && TALKS.find(t => t.id === riskTid).auxSignals.filter(x => x.word === '悲伤').length === 1"), 'append auxiliary signals must persist and negated terms must not'
+    page.evaluate("""() => {
+      S.rec = recFrom(TALKS.find(t => t.id === riskTid)); S.rec.situ = '情况已经了解'; recSave(false);
+    }""")
+    assert page.evaluate("!TALKS.find(t => t.id === riskTid).auxSignals.some(x => x.source === 'record') && TALKS.find(t => t.id === riskTid).auxSignals.some(x => x.source === 'append')"), 'editing updates current signals while preserving append signals'
+    page.evaluate("makeRiskRec('现在想死，也睡不着'); recSave(true)")
+    assert page.evaluate("activeRisk().length === 0 && !TALKS[TALKS.length - 1].auxSignals && S.toast.includes('草稿不会自动报告')"), 'draft is reminder-only for all tiers'
+
+
+CASES = {'R10': r10, 'R11': r11, 'R18': r18}
 
 
 def main():

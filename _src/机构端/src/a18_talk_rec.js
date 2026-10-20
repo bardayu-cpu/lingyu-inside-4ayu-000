@@ -68,6 +68,7 @@ function recView() { const t = TALKS.find(x => x.id === S.rv), v = recVis(t), mi
     ${see('situ') ? (t.adds || []).map(a => `<p class="tkadd">补充 · ${fmt(a.at)}${a.who ? ` · ${SU(a.who).name}` : ''}：${esc(a.t)}</p>`).join('') : ''}
     <div class="kv" style="margin-top:12px"><span>情况类型</span><b>${see('types') ? (t.types || []).join('、') || '—' : none}</b><span>学生表达的需要</span><b>${see('need') ? esc(t.need) || '—' : none}</b><span>下次谈心</span><b>${see('next') ? t.next || '不需要' : none}</b>${mine || v === 'full' ? `<span>希望中心介入</span><b>${t.center ? `是${t.cwhy ? '：' + esc(t.cwhy) : ''}` : '否'}</b>` : ''}</div>
     ${t.risk ? `<p class="tkrisk">${I('alert', 's')}含安全相关内容 · 已报告紧急情况</p>` : ''}
+    ${see('situ') && (t.auxSignals || []).some(x => !x.who || visP(x.who)) ? `<p class="note">辅助信号（不单独报告）：${[...new Set((t.auxSignals || []).filter(x => !x.who || visP(x.who)).map(x => x.word))].map(esc).join('、')}</p>` : ''}
     ${mine ? `<h4>谁能看</h4>${(t.shares || []).length ? `<table class="t"><tr><th>分享给</th><th>能看</th><th>有效期</th><th></th></tr>${t.shares.map((x, i) => `<tr><td>${ST(x.to).name}<small>${tagOf(x.to)}</small></td><td>基本信息、${x.parts.map(p => PARTS.find(q => q[0] === p)[1]).join('、') || '—'}</td><td>${x.off ? '已收回' : shareOn(x) ? fmt(x.exp).split(' ')[0] + ' 前' : '已过期'}</td><td>${x.off ? '' : `<button class="btn ghost xs" data-act="shExt" data-arg="${t.id}|${i}">延长 30 天</button><button class="btn ghost xs" data-act="mo" data-arg="shEdit:${t.id}|${i}">改范围</button><button class="btn ghost xs" data-act="shOff" data-arg="${t.id}|${i}">收回</button>`}</td></tr>`).join('')}</table>` : '<p class="note">只有你能看。</p>'}
       ${t.forced ? '<p class="note">这条记录回传心理中心，不能移除；被分享的人看不到「心理中心」这一项。</p>' : ''}<p class="note">同步 SIS：${t.sis ? '已勾选（这一版只对齐字段）' : '不同步'}${(t.hist || []).length ? ` · 已修改 ${t.hist.length} 次，修改前的内容保留` : ''}</p>` : ''}</div>`; }
 
@@ -75,6 +76,14 @@ function recView() { const t = TALKS.find(x => x.id === S.rv), v = recVis(t), mi
 const recRisk = R => TALK_RE.test([R.situ, R.need, R.topic, R.cwhy, ...Object.values(R.pp || {}).map(p => p.txt)].join(' '));
 // 比较命中的词项，不能用“以前已命中过”的布尔值吞掉本次新增表达。
 const talkRiskWords = txt => cwFind(txt).hit.filter(w => cwL(w) <= 2);
+const talkAuxWords = txt => cwFind(txt).hit.filter(w => cwL(w) === 3);
+const talkSaveAux = (t, R) => {
+  const old = t.auxSignals || [], signals = talkAuxWords([R.situ, R.need, R.topic, R.cwhy].join(' ')).map(word => ({ word, who: null }));
+  R.sids.forEach(id => talkAuxWords((R.pp[id] || {}).txt || '').forEach(word => signals.push({ word, who: id })));
+  t.auxSignals = [...old.filter(x => x.source === 'append'), ...signals.map(x => Object.assign({ at: (old.find(o => o.source === 'record' && o.word === x.word && o.who === x.who) || {}).at || new Date(NOW), source: 'record' }, x))];
+};
+const talkAppendAux = (t, txt, who) => { if (t.draft) return; const words = talkAuxWords(txt);
+  if (words.length) t.auxSignals = [...(t.auxSignals || []), ...words.map(word => ({ word, who: who === 'all' ? null : who, at: new Date(NOW), source: 'append' }))]; };
 // 新报告附到未结案危机；升级后保留首次触发及旧接收记录，单独计本次紧急确认时间。
 const talkRiskReport = (t, s, words, src) => {
   const urgent = words.some(w => cwL(w) === 1), k0 = CRISES.find(k => k.sid === s.id && k.st !== 'closed');
@@ -126,6 +135,7 @@ function recSave(draft) { const R = S.rec, edit = R.id && TALKS.find(t => t.id =
   R.sids.forEach(id => { const p = t.pp[id]; if (p && p.txt && !p.savedAt && !draft) p.savedAt = new Date(NOW); });
   if (draft) { log(`保存谈话记录草稿（${tkId(t)}）`, SU(t.sid), { k: 'talkLog', noTl: 1, obj: '谈话记录' }); S.rec = null; S.tabs.talk = 'recs';
     return toast(riskC || riskP.length ? '草稿已保存。草稿里有安全相关的表达，草稿不会自动报告；情况紧急请马上保存正式记录或报告紧急情况' : '草稿已保存，在「谈心记录」里可以接着写；草稿不完成任务'); }
+  talkSaveAux(t, R);
   /* 危机词：只对这次新出现的表达报告，不用老师再选 */
   const hitIds = cHit ? (multi ? (R.cw === 'all' ? R.sids.filter(id => !(R.pp[id] || {}).absent) : [R.cw]) : R.sids.slice()) : []; pHit.forEach(id => hitIds.includes(id) || hitIds.push(id));
   if (R.risk) t.risk = 1;

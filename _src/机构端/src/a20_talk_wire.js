@@ -30,7 +30,7 @@ function stuReply(v, r, slots, why) { const s = SU(v.sid); v.reply = r; v.repAt 
   else { v.st = 'no'; ITEMS.filter(x => v.items.includes(x.id) && x.st === 'open').forEach(x => { x.st = 'closed'; x.closeWhy = '学生这次不想谈'; x.inv = null; });
     if (curLv(s) >= 4) addXf('decline', s, { from: v.by, note: '学生在邀约里选了「这次不用了」' }); }
   notify(v.by, '站内', `${s.name} 回复了邀约：${r}`, s.id); log(`学生回复邀约：${r}${r === '换个时间' && slots ? `（${slots.map(x => `${x.day} ${x.part}`).join('、')}）` : ''}`, s, { k: 'inv', sys: 1, cat: '流转', obj: '邀约' }); }
-const riskAdd = (t, txt, sid = t.sid) => { const words = talkRiskWords(txt); if (!words.length) return null; t.risk = 1; t.forced = true;
+const riskAdd = (t, txt, sid = t.sid) => { const words = talkRiskWords(txt); if (t.draft || !words.length) return null; t.risk = 1; t.forced = true;
   return talkRiskReport(t, SU(sid), words, `${ST(me()).name} 追加的谈话记录里出现安全相关的表达（保存时自动报告）`); };
 const recFrom = t => Object.assign(recNew(t.sid), { id: t.id, sids: (t.sids || [t.sid]).slice(), who: (t.who || ['本人']).slice(), date: ymd(t.at), tm: `${pad(t.at.getHours())}:${pad(t.at.getMinutes())}`, plan: t.plan, inv: t.inv, mode: t.mode, place: t.place, result: t.result, situ: t.situ, types: (t.types || []).slice(), need: t.need || '', topic: t.topic || '', next: t.next || '不需要', center: !!t.center, cwhy: t.cwhy || '',
     done: t.draft ? recNew(t.sid, t.inv).done : [], shares: (t.shares || []).map(x => Object.assign({}, x, { parts: x.parts.slice(), days: x.days || 30 })), sis: t.sis, src0: t.src0, t0: t.t0, prev: t.prev, same: !!t.prev, pp: JSON.parse(JSON.stringify(t.pp || {})), backfill: t.backfill, cw: t.cw, dirty: false });
@@ -115,6 +115,7 @@ Object.assign(ACT, {
   tkAddGo(tid) { const t = TALKS.find(x => x.id === tid), v = (S.form.add || '').trim(), ids = t.sids || [t.sid]; if (!recOwner(t)) return toast('只有写这条记录的人可以追加'); if (!v) return toast('请写下补充的内容');
     if (ids.length > 1 && TALK_RE.test(v) && !S.form.cw) { S.form.askCw = 1; return toast('补充里有安全相关的表达，请先选涉及哪个学生'); }
     const who = ids.length > 1 ? S.form.cw : t.sid; t.adds.push({ at: new Date(NOW), t: v, by: me(), who: who === 'all' ? null : who });
+    talkAppendAux(t, v, who);
     log('追加谈话记录补充', SU(t.sid), { k: 'talkLog', noTl: 1, obj: '谈话记录' }); if (t.forced) notify(SU(t.sid).owner || SU(t.sid).assignee || 'c5', '站内', `${ST(me()).name} 追加了谈话记录补充：${nm(SU(t.sid))}`, t.sid);
     const hit = TALK_RE.test(v) ? (who === 'all' ? ids : [who || t.sid]) : [], ks = hit.map(id => riskAdd(t, v, id)).filter(Boolean); S.mo = ks[0] ? `tkCrisis:${ks[0].id}` : null; if (!ks.length) toast('已追加'); },
   tkCorrGo(tid) { const t = TALKS.find(x => x.id === tid), n = (S.form.note || '').trim(); if (!n) return toast('请写原因'); addXf('corr', SU(t.sid), { note: n, rec: tid }); t.corrAsk = 1; S.mo = null; toast('已提交，中心负责人批准后可以再改一次'); },
