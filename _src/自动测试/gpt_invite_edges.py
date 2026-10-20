@@ -51,6 +51,10 @@ with sync_playwright() as p:
     S.evaluate("ACT.zIvc();render()");pg.wait_for_timeout(400)
     r={'student':S.evaluate("S.ivc && ({id:S.ivc.id,rv:S.ivc.rv,sv:S.ivc.sv})"),'server':A.evaluate("ivb().list.find(x=>x.sid===CORE.lin.id) && ({id:ivb().list.find(x=>x.sid===CORE.lin.id).id,rv:ivb().list.find(x=>x.sid===CORE.lin.id).replyRv})")}
     chk(r['server'] and r['student']['id']==r['server']['id'] and bool(r['student']['sv']),f'logged-out institution still acknowledges invitation reply: {r}')
+    r=S.evaluate("""(()=>{S.bk={cid:'c1',di:1,ti:1,kind:'预咨询',st:'待确认',inv:true,ivId:'edge-source',topics:[],mode:'线下',intake:{st:'sent'}};S.ivc={id:'edge-source',st:'sub',rv:1};S.resch={approval:false,moved:false};S.pick={cid:'c1',di:2,ti:2};S.form={mode:'线下',topics:[]};ACT.bookSubmit();return {inv:S.bk&&S.bk.inv,id:S.bk&&S.bk.ivId};})()""")
+    chk(r.get('inv') and r.get('id')=='edge-source',f'pending invite reschedule retains source and invitation ID: {r}')
+    r=S.evaluate("""(()=>{S.bk={cid:'c1',di:1,ti:1,kind:'预咨询',st:'已确认',inv:true,ivId:'edge-source',topics:[],mode:'线下',intake:{st:'sent'},pend:{type:'resch',cid:'c1',di:2,ti:2,mode:'线下',topics:[]}};ACT.zPend();return {inv:S.bk&&S.bk.inv,id:S.bk&&S.bk.ivId};})()""")
+    chk(r.get('inv') and r.get('id')=='edge-source',f'approved invite reschedule retains source and invitation ID: {r}')
     chk(not errors,'no browser script errors: '+str(errors))
     print(f'gpt_invite_edges: {count} passed')
     browser.close()
